@@ -69,3 +69,5 @@ fabric.properties
 .idea/codestream.xml
 
 .idea/**/azureSettings.xml
+
+.env
