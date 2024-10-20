@@ -5,6 +5,6 @@ type User struct {
 	FullName             string `gorm:"type:varchar(255)"`
 	Email                string `gorm:"type:varchar(255);unique"`
 	Nickname             string `gorm:"type:varchar(100);unique"`
-	Password             string `gorm:"type:varchar(255)"`
-	RecoverPasswordToken string `gorm:"type:varchar(255)"`
+	Password             string `gorm:"type:varchar(255)" json:"-"`
+	RecoverPasswordToken string `gorm:"type:varchar(255)" json:"-"`
 }
