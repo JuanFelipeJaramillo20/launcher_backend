@@ -10,10 +10,24 @@ type AuthController struct {
 	AuthService service.AuthService
 }
 
+// swagger:response StringResponse
+type StringResponse struct {
+	// Token
+	Token string `json:"token"`
+}
+
 func NewAuthController(authService service.AuthService) *AuthController {
 	return &AuthController{authService}
 }
 
+// swagger:route POST /auth/login auth loginUser
+// Logs in a user by email and password, returning a JWT token.
+//
+// Responses:
+//
+//	200: StringResponse
+//	400: CommonError
+//	401: CommonError
 func (ac *AuthController) Login(c *gin.Context) {
 	var credentials struct {
 		Email    string `json:"email"`

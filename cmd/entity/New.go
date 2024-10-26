@@ -2,10 +2,25 @@ package entity
 
 import "time"
 
+// swagger:model News
 type News struct {
-	ID        uint64    `gorm:"primaryKey;autoIncrement"`
-	Title     string    `gorm:"type:varchar(255)"`
-	Content   string    `gorm:"type:text"`
-	CreatedBy uint64    `gorm:"index"`
+	// News ID
+	// required: true
+	ID uint64 `gorm:"primaryKey;autoIncrement"`
+
+	// Title of the news article
+	// required: true
+	Title string `gorm:"type:varchar(255)"`
+
+	// Content of the news article
+	// required: true
+	Content string `gorm:"type:text"`
+
+	// ID of the user who created this news article
+	// required: true
+	CreatedBy uint64 `gorm:"index"`
+
+	// Creation timestamp
+	// required: true
 	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 }

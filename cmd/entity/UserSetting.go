@@ -1,8 +1,20 @@
 package entity
 
+// swagger:model UserSetting
 type UserSetting struct {
-	ID        uint64 `gorm:"primaryKey;autoIncrement"`
-	UserID    uint64 `gorm:"index"`
+	// UserSetting ID
+	// required: true
+	ID uint64 `gorm:"primaryKey;autoIncrement"`
+
+	// User ID
+	// required: true
+	UserID uint64 `gorm:"index"`
+
+	// Setting ID
+	// required: true
 	SettingID uint64 `gorm:"index"`
-	IsActive  bool   `gorm:"default:true"`
+
+	// Active status of the setting
+	// required: true
+	IsActive bool `gorm:"default:true"`
 }

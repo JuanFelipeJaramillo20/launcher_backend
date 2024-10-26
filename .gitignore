@@ -70,4 +70,4 @@ fabric.properties
 
 .idea/**/azureSettings.xml
 
-.env
+.env.**

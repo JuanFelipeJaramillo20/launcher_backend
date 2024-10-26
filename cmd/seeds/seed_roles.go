@@ -18,5 +18,6 @@ func SeedRoles(db *gorm.DB) {
 		if err != nil {
 			log.Fatalf("Error seeding roles: %v", err)
 		}
+		log.Printf("Role %s seeded successfully", role.Name)
 	}
 }

@@ -21,7 +21,7 @@ func NewAuthService(userRepo repository.UserRepository) AuthService {
 	return &authService{userRepo}
 }
 
-var jwtKey = []byte("your_secret_key")
+var jwtKey = []byte("secret_key_not_secure_at_all")
 
 func (s *authService) Login(email, password string) (string, error) {
 	user, err := s.userRepo.GetUserByEmail(email)
@@ -34,9 +34,14 @@ func (s *authService) Login(email, password string) (string, error) {
 		return "", errors.New("invalid email or password")
 	}
 
+	var roleNames []string
+	for _, role := range user.Roles {
+		roleNames = append(roleNames, role.Name)
+	}
+
 	claims := &dto.JWTCustomClaims{
 		UserID: user.ID,
-		Role:   "user",
+		Role:   roleNames,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
 		},

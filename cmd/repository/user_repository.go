@@ -29,13 +29,13 @@ func (r *userRepository) CreateUser(user *entity.User) error {
 
 func (r *userRepository) GetAllUsers() ([]entity.User, error) {
 	var users []entity.User
-	err := r.db.Find(&users).Error
+	err := r.db.Preload("Roles").Find(&users).Error
 	return users, err
 }
 
 func (r *userRepository) GetUserByID(id uint64) (*entity.User, error) {
 	var user entity.User
-	err := r.db.First(&user, id).Error
+	err := r.db.Preload("Roles").First(&user, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (r *userRepository) DeleteUser(id uint64) error {
 
 func (r *userRepository) GetUserByEmail(email string) (*entity.User, error) {
 	var user entity.User
-	err := r.db.Where("email = ?", email).First(&user).Error
+	err := r.db.Preload("Roles").Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (r *userRepository) GetUserByEmail(email string) (*entity.User, error) {
 
 func (r *userRepository) GetUserByNickname(nickname string) (*entity.User, error) {
 	var user entity.User
-	err := r.db.Where("nickname = ?", nickname).First(&user).Error
+	err := r.db.Preload("Roles").Where("nickname = ?", nickname).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
