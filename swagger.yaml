@@ -244,6 +244,10 @@ definitions:
         x-go-package: venecraft-back/cmd/entity
     User:
         properties:
+            RecoverPasswordTokenExpires:
+                description: Expiration time of password recovery token
+                format: date-time
+                type: string
             Roles:
                 description: List of user roles
                 items:
@@ -319,6 +323,11 @@ definitions:
         x-go-package: venecraft-back/cmd/entity
 info: {}
 paths:
+    /api/password-reset-request:
+        post:
+            operationId: passwordResetRequest
+            tags:
+                - users
     /api/register:
         post:
             operationId: createRegister
@@ -347,6 +356,26 @@ paths:
             summary: Approves a user registration request by ID.
             tags:
                 - register
+    /api/register/deny/{id}:
+        put:
+            operationId: denyRegister
+            responses:
+                "200":
+                    description: User
+                    schema:
+                        $ref: '#/definitions/User'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Denies a user registration request by ID.
+            tags:
+                - register
+    /api/reset-password:
+        post:
+            operationId: resetPassword
+            tags:
+                - users
     /api/users:
         get:
             operationId: getAllUsers
