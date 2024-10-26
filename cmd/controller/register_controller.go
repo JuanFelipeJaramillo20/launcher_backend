@@ -63,3 +63,27 @@ func (rc *RegisterController) ApproveRegister(c *gin.Context) {
 
 	c.JSON(http.StatusOK, user)
 }
+
+// swagger:route PUT /api/register/deny/{id} register denyRegister
+// Denies a user registration request by ID.
+//
+// Responses:
+//
+//	200: User
+//	400: CommonError
+//	500: CommonError
+func (rc *RegisterController) DenyRegister(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid registration ID"})
+		return
+	}
+
+	err = rc.RegisterService.DenyRegister(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, "Register request denied successfully")
+}

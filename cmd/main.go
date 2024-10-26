@@ -125,6 +125,7 @@ func main() {
 	protected.Use(middlewares.AuthMiddleware())
 	{
 		protected.PUT("/register/approve/:id", registerController.ApproveRegister)
+		protected.PUT("/register/deny/:id", registerController.DenyRegister)
 		routes.UserRoutes(protected, userController)
 	}
 

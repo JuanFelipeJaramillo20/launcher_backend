@@ -6,7 +6,7 @@ import (
 	"github.com/resend/resend-go/v2"
 	"golang.org/x/crypto/bcrypt"
 	"log"
-	"os"
+	"venecraft-back/cmd/email"
 	"venecraft-back/cmd/entity"
 	"venecraft-back/cmd/enums"
 	"venecraft-back/cmd/repository"
@@ -15,6 +15,7 @@ import (
 type RegisterService interface {
 	CreateRegister(register *entity.Register) error
 	ApproveRegister(id uint64) (*entity.User, error)
+	DenyRegister(id uint64) error
 }
 
 type registerService struct {
@@ -22,39 +23,33 @@ type registerService struct {
 	userRepo     repository.UserRepository
 	roleRepo     repository.RoleRepository
 	userRoleRepo repository.UserRoleRepository
-	emailClient  *resend.Client
+	emailClient  *email.EmailClient
 }
 
 func NewRegisterService(registerRepo repository.RegisterRepository, userRepo repository.UserRepository, roleRepo repository.RoleRepository, userRoleRepo repository.UserRoleRepository) RegisterService {
-	apiKey := os.Getenv("RESEND_API_KEY")
-	emailClient := resend.NewClient(apiKey)
-
 	return &registerService{
 		registerRepo: registerRepo,
 		userRepo:     userRepo,
 		roleRepo:     roleRepo,
 		userRoleRepo: userRoleRepo,
-		emailClient:  emailClient,
+		emailClient:  email.GetEmailClient(),
 	}
 }
 
 func (s *registerService) CreateRegister(register *entity.Register) error {
-	// Hash the password before saving
 	hashedPassword, err := hashPassword(register.Password)
 	if err != nil {
 		return err
 	}
 	register.Password = hashedPassword
 
-	// Attempt to create the registration record
 	err = s.registerRepo.CreateRegister(register)
 	if err != nil {
 		return err
 	}
 
-	// Prepare cleanup in case of a later failure by deferring the deletion of the register record
 	defer func() {
-		if err != nil { // Only executes if there's an error
+		if err != nil {
 			delErr := s.registerRepo.DeleteRegister(register.ID)
 			if delErr != nil {
 				log.Printf("Error cleaning up registration for user %s: %v", register.Email, delErr)
@@ -64,26 +59,22 @@ func (s *registerService) CreateRegister(register *entity.Register) error {
 		}
 	}()
 
-	// Fetch all admins to notify them of the new registration
 	admins, err := s.userRepo.GetUsersByRole(enums.RoleAdmin)
 	if err != nil {
 		return fmt.Errorf("failed to fetch admin users: %v", err)
 	}
 
-	// Collect all admin email addresses
 	adminEmails := make([]string, len(admins))
 	for i, admin := range admins {
 		adminEmails[i] = admin.Email
 	}
 
-	// Attempt to send a confirmation email to the user
-	err = s.sendUserConfirmationEmail(register.Email)
+	err = s.sendUserConfirmationEmail(register.Email, register.Nickname)
 	if err != nil {
 		log.Printf("Error sending confirmation email to user %s: %v", register.Email, err)
 		return fmt.Errorf("failed to send confirmation email to the user")
 	}
 
-	// Attempt to notify admins about the new registration request
 	err = s.sendAdminNotificationEmail(adminEmails, register)
 	if err != nil {
 		log.Printf("Error sending notification email to admins about registration by user %s: %v", register.Email, err)
@@ -131,7 +122,31 @@ func (s *registerService) ApproveRegister(id uint64) (*entity.User, error) {
 		return nil, err
 	}
 
+	err = s.sendUserResponseEmail(register.Email, true)
+	if err != nil {
+		log.Printf("Error sending approval email to user %s: %v", register.Email, err)
+	}
+
 	return user, nil
+}
+
+func (s *registerService) DenyRegister(id uint64) error {
+	register, err := s.registerRepo.GetRegisterByID(id)
+	if err != nil {
+		return errors.New("registration request not found")
+	}
+
+	err = s.registerRepo.DeleteRegister(id)
+	if err != nil {
+		return err
+	}
+
+	err = s.sendUserResponseEmail(register.Email, false)
+	if err != nil {
+		log.Printf("Error sending denial email to user %s: %v", register.Email, err)
+	}
+
+	return nil
 }
 
 func hashPassword(password string) (string, error) {
@@ -142,15 +157,21 @@ func hashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-func (s *registerService) sendUserConfirmationEmail(userEmail string) error {
+func (s *registerService) sendUserConfirmationEmail(userEmail string, userName string) error {
+	// Use the full relative path for the template
+	body, err := email.RenderTemplate("register/user_confirmation.html", map[string]string{"Name": userName})
+	if err != nil {
+		return fmt.Errorf("failed to render user confirmation email template: %v", err)
+	}
+
 	params := &resend.SendEmailRequest{
 		From:    "Registration Service <onboarding@jjar.lat>",
 		To:      []string{userEmail},
-		Html:    "<strong>Your registration request has been created successfully. Please wait for an admin to review your request. You will be notified by email once your request is processed.</strong>",
+		Html:    body,
 		Subject: "Registration Request Created",
 	}
 
-	sent, err := s.emailClient.Emails.Send(params)
+	sent, err := s.emailClient.SendEmail(params)
 	if err != nil {
 		return fmt.Errorf("failed to send user confirmation email: %v", err)
 	}
@@ -160,26 +181,58 @@ func (s *registerService) sendUserConfirmationEmail(userEmail string) error {
 }
 
 func (s *registerService) sendAdminNotificationEmail(adminEmails []string, registerDetails *entity.Register) error {
-	emailContent := fmt.Sprintf(
-		"<strong>A new registration request has been received.</strong><br><br>"+
-			"<b>Full Name:</b> %s<br><b>Email:</b> %s<br><b>Nickname:</b> %s<br>",
-		registerDetails.FullName,
-		registerDetails.Email,
-		registerDetails.Nickname,
-	)
+	// Use the full relative path for the template
+	body, err := email.RenderTemplate("register/admin_notification.html", map[string]string{
+		"FullName": registerDetails.FullName,
+		"Email":    registerDetails.Email,
+		"Nickname": registerDetails.Nickname,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to render admin notification email template: %v", err)
+	}
 
 	params := &resend.SendEmailRequest{
 		From:    "Registration Service <onboarding@jjar.lat>",
 		To:      adminEmails,
-		Html:    emailContent,
+		Html:    body,
 		Subject: "New Registration Request for Review",
 	}
 
-	sent, err := s.emailClient.Emails.Send(params)
+	sent, err := s.emailClient.SendEmail(params)
 	if err != nil {
 		return fmt.Errorf("failed to send admin notification email: %v", err)
 	}
 
 	fmt.Println("Admin notification email sent successfully with ID:", sent.Id)
+	return nil
+}
+
+func (s *registerService) sendUserResponseEmail(userEmail string, accepted bool) error {
+	templatePath := "register/user_response.html"
+	data := map[string]string{
+		"Message": "Your registration request has been approved. Welcome to the platform!",
+	}
+	if !accepted {
+		data["Message"] = "We're sorry, but your registration request has been denied."
+	}
+
+	body, err := email.RenderTemplate(templatePath, data)
+	if err != nil {
+		return fmt.Errorf("failed to render user response email template: %v", err)
+	}
+
+	params := &resend.SendEmailRequest{
+		From:    "Registration Service <onboarding@jjar.lat>",
+		To:      []string{userEmail},
+		Html:    body,
+		Subject: "Registration Request Status",
+	}
+
+	sent, err := s.emailClient.SendEmail(params)
+	if err != nil {
+		return fmt.Errorf("failed to send user response email: %v", err)
+	}
+
+	fmt.Println("User response email sent successfully with ID:", sent.Id)
 	return nil
 }
