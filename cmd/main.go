@@ -17,6 +17,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/joho/godotenv"
@@ -24,6 +25,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"os"
+	"time"
 	"venecraft-back/cmd/controller"
 	"venecraft-back/cmd/entity"
 	"venecraft-back/cmd/middlewares"
@@ -38,7 +40,7 @@ var DB *gorm.DB
 func init() {
 	env := os.Getenv("APP_ENV")
 	if env == "" {
-		env = "development"
+		env = "production"
 	}
 
 	envFile := fmt.Sprintf(".env.%s", env)
@@ -106,6 +108,15 @@ func main() {
 	registerController := controller.NewRegisterController(registerService)
 
 	server := gin.Default()
+
+	server.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	routes.AuthRoutes(server, authController)
 	routes.RegisterRoutes(server, registerController)
