@@ -29,3 +29,20 @@ func GetEmailClient() *EmailClient {
 func (e *EmailClient) SendEmail(params *resend.SendEmailRequest) (*resend.SendEmailResponse, error) {
 	return e.client.Emails.Send(params)
 }
+
+func (e *EmailClient) SendPasswordResetEmail(email string, resetLink string) error {
+	body, err := RenderTemplate("password_reset/password_reset.html", map[string]string{"ResetLink": resetLink})
+	if err != nil {
+		return fmt.Errorf("failed to render reset email template: %v", err)
+	}
+
+	params := &resend.SendEmailRequest{
+		From:    "Support <support@jjar.lat>",
+		To:      []string{email},
+		Html:    body,
+		Subject: "Password Reset Request",
+	}
+
+	_, err = e.client.Emails.Send(params)
+	return err
+}

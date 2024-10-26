@@ -1,5 +1,7 @@
 package entity
 
+import "time"
+
 // swagger:model User
 type User struct {
 	// User ID
@@ -24,6 +26,9 @@ type User struct {
 
 	// Token for password recovery
 	RecoverPasswordToken string `json:"-" gorm:"type:varchar(255)"`
+
+	// Expiration time of password recovery token
+	RecoverPasswordTokenExpires time.Time `gorm:"default:null"`
 
 	// List of user roles
 	Roles []Role `gorm:"many2many:user_roles;"`

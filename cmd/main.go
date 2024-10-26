@@ -118,6 +118,8 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	server.POST("/api/password-reset-request", userController.PasswordResetRequest)
+	server.POST("/api/reset-password", userController.ResetPassword)
 	routes.AuthRoutes(server, authController)
 	routes.RegisterRoutes(server, registerController)
 

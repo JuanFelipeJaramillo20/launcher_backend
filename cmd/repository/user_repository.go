@@ -14,6 +14,7 @@ type UserRepository interface {
 	GetUserByEmail(email string) (*entity.User, error)
 	GetUserByNickname(nickname string) (*entity.User, error)
 	GetUsersByRole(role string) ([]entity.User, error)
+	GetUserByResetToken(resetToken string) (*entity.User, error)
 }
 
 type userRepository struct {
@@ -78,4 +79,10 @@ func (r *userRepository) GetUsersByRole(role string) ([]entity.User, error) {
 		Preload("Roles").
 		Find(&users).Error
 	return users, err
+}
+
+func (r *userRepository) GetUserByResetToken(resetToken string) (*entity.User, error) {
+	var user entity.User
+	err := r.db.Where("recover_password_token = ?", resetToken).First(&user).Error
+	return &user, err
 }

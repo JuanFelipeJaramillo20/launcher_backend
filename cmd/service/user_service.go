@@ -2,7 +2,11 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
+	"os"
+	"time"
+	"venecraft-back/cmd/email"
 	"venecraft-back/cmd/entity"
 	"venecraft-back/cmd/repository"
 	"venecraft-back/cmd/utils"
@@ -14,14 +18,17 @@ type UserService interface {
 	GetUserByID(id uint64) (*entity.User, error)
 	UpdateUser(user *entity.User) error
 	DeleteUser(id uint64) error
+	RequestPasswordReset(email string) error
+	ResetPassword(token string, newPassword string) error
 }
 
 type userService struct {
-	userRepo repository.UserRepository
+	userRepo    repository.UserRepository
+	emailClient *email.EmailClient
 }
 
 func NewUserService(userRepo repository.UserRepository) UserService {
-	return &userService{userRepo}
+	return &userService{userRepo, email.GetEmailClient()}
 }
 
 func (s *userService) CreateUser(user *entity.User) error {
@@ -78,4 +85,44 @@ func (s *userService) UpdateUser(user *entity.User) error {
 
 func (s *userService) DeleteUser(id uint64) error {
 	return s.userRepo.DeleteUser(id)
+}
+
+func (s *userService) RequestPasswordReset(email string) error {
+	user, err := s.userRepo.GetUserByEmail(email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	token, expiration, err := utils.GenerateResetToken()
+	if err != nil {
+		return fmt.Errorf("failed to generate reset token: %v", err)
+	}
+
+	user.RecoverPasswordToken = token
+	user.RecoverPasswordTokenExpires = expiration
+	if err := s.userRepo.UpdateUser(user); err != nil {
+		return fmt.Errorf("failed to save reset token: %v", err)
+	}
+
+	host := os.Getenv("FRONTEND_ADDRESS")
+	resetLink := fmt.Sprintf("%sreset-password?token=%s", host, token)
+	return s.emailClient.SendPasswordResetEmail(user.Email, resetLink)
+}
+
+func (s *userService) ResetPassword(token, newPassword string) error {
+	user, err := s.userRepo.GetUserByResetToken(token)
+	if err != nil || time.Now().After(user.RecoverPasswordTokenExpires) {
+		return errors.New("invalid or expired token")
+	}
+
+	hashedPassword, err := hashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %v", err)
+	}
+
+	user.Password = hashedPassword
+	user.RecoverPasswordToken = ""
+	user.RecoverPasswordTokenExpires = time.Time{}
+
+	return s.userRepo.UpdateUser(user)
 }
