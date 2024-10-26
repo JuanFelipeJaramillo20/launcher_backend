@@ -13,6 +13,7 @@ type UserRepository interface {
 	DeleteUser(id uint64) error
 	GetUserByEmail(email string) (*entity.User, error)
 	GetUserByNickname(nickname string) (*entity.User, error)
+	GetUsersByRole(role string) ([]entity.User, error)
 }
 
 type userRepository struct {
@@ -66,4 +67,15 @@ func (r *userRepository) GetUserByNickname(nickname string) (*entity.User, error
 		return nil, err
 	}
 	return &user, nil
+}
+
+// GetUsersByRole retrieves all users assigned to a specific role.
+func (r *userRepository) GetUsersByRole(role string) ([]entity.User, error) {
+	var users []entity.User
+	err := r.db.Joins("JOIN user_roles ON user_roles.user_id = users.id").
+		Joins("JOIN roles ON roles.id = user_roles.role_id").
+		Where("roles.name = ?", role).
+		Preload("Roles").
+		Find(&users).Error
+	return users, err
 }

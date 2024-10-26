@@ -1,0 +1,464 @@
+definitions:
+    Ban:
+        properties:
+            BanDate:
+                description: Date the ban was issued
+                format: date-time
+                type: string
+            BannedBy:
+                description: ID of the user who issued the ban
+                format: uint64
+                type: integer
+            Duration:
+                $ref: '#/definitions/Duration'
+            ID:
+                description: ID of the ban
+                format: uint64
+                type: integer
+            PlayerID:
+                description: Player ID associated with the ban
+                format: uint64
+                type: integer
+            Reason:
+                description: Reason for the ban
+                type: string
+        required:
+            - ID
+            - PlayerID
+            - Reason
+            - BannedBy
+            - BanDate
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    Duration:
+        description: |-
+            A Duration represents the elapsed time between two instants
+            as an int64 nanosecond count. The representation limits the
+            largest representable duration to approximately 290 years.
+        format: int64
+        type: integer
+        x-go-package: time
+    Log:
+        properties:
+            Action:
+                description: Action performed
+                type: string
+            ID:
+                description: Log ID
+                format: uint64
+                type: integer
+            Timestamp:
+                description: Timestamp of the log entry
+                format: date-time
+                type: string
+            UserID:
+                description: ID of the user associated with this log entry
+                format: uint64
+                type: integer
+        required:
+            - ID
+            - UserID
+            - Action
+            - Timestamp
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    News:
+        properties:
+            Content:
+                description: Content of the news article
+                type: string
+            CreatedAt:
+                description: Creation timestamp
+                format: date-time
+                type: string
+            CreatedBy:
+                description: ID of the user who created this news article
+                format: uint64
+                type: integer
+            ID:
+                description: News ID
+                format: uint64
+                type: integer
+            Title:
+                description: Title of the news article
+                type: string
+        required:
+            - ID
+            - Title
+            - Content
+            - CreatedBy
+            - CreatedAt
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    Permission:
+        properties:
+            ID:
+                description: Permission ID
+                format: uint64
+                type: integer
+            Name:
+                description: Name of the permission
+                type: string
+        required:
+            - ID
+            - Name
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    Player:
+        properties:
+            ID:
+                description: Player ID
+                format: uint64
+                type: integer
+            JoinDate:
+                description: Date the player joined
+                format: date-time
+                type: string
+            LastSeen:
+                description: Last time the player was seen
+                format: date-time
+                type: string
+            ServerID:
+                description: Server ID the player is associated with
+                format: uint64
+                type: integer
+            UserID:
+                description: Associated user ID
+                format: uint64
+                type: integer
+        required:
+            - ID
+            - UserID
+            - ServerID
+            - JoinDate
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    Register:
+        properties:
+            Accepted:
+                description: Status of registration approval
+                type: boolean
+            Email:
+                description: Email address for registration
+                type: string
+            FullName:
+                description: Full name for registration
+                type: string
+            ID:
+                description: Register ID
+                format: uint64
+                type: integer
+            Nickname:
+                description: Nickname chosen for registration
+                type: string
+            Password:
+                description: Password for registration
+                type: string
+        required:
+            - ID
+            - FullName
+            - Email
+            - Nickname
+            - Password
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    Role:
+        properties:
+            ID:
+                description: Role ID
+                format: uint64
+                type: integer
+            Name:
+                description: Name of the role
+                type: string
+        required:
+            - ID
+            - Name
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    RolePermission:
+        properties:
+            ID:
+                description: RolePermission ID
+                format: uint64
+                type: integer
+            PermissionID:
+                description: Permission ID
+                format: uint64
+                type: integer
+            RoleID:
+                description: Role ID
+                format: uint64
+                type: integer
+        required:
+            - ID
+            - RoleID
+            - PermissionID
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    Server:
+        properties:
+            ID:
+                description: Server ID
+                format: uint64
+                type: integer
+            IPAddress:
+                description: IP address of the server
+                type: string
+            MaxPlayers:
+                description: Maximum number of players on the server
+                format: int64
+                type: integer
+            Name:
+                description: Name of the server
+                type: string
+            Port:
+                description: Port number of the server
+                format: int64
+                type: integer
+            Status:
+                description: Current status of the server
+                type: string
+        required:
+            - ID
+            - Name
+            - IPAddress
+            - Port
+            - MaxPlayers
+            - Status
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    Setting:
+        properties:
+            Description:
+                description: Description of the setting
+                type: string
+            ID:
+                description: Setting ID
+                format: uint64
+                type: integer
+        required:
+            - ID
+            - Description
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    User:
+        properties:
+            Roles:
+                description: List of user roles
+                items:
+                    $ref: '#/definitions/Role'
+                type: array
+            email:
+                description: Email address
+                type: string
+                x-go-name: Email
+            full_name:
+                description: Full name of the user
+                type: string
+                x-go-name: FullName
+            id:
+                description: User ID
+                format: uint64
+                type: integer
+                x-go-name: ID
+            nickname:
+                description: Nickname of the user
+                type: string
+                x-go-name: Nickname
+        required:
+            - id
+            - full_name
+            - email
+            - nickname
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    UserRole:
+        properties:
+            ID:
+                description: UserRole ID
+                format: uint64
+                type: integer
+            RoleID:
+                description: Role ID
+                format: uint64
+                type: integer
+            UserID:
+                description: User ID
+                format: uint64
+                type: integer
+        required:
+            - ID
+            - UserID
+            - RoleID
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+    UserSetting:
+        properties:
+            ID:
+                description: UserSetting ID
+                format: uint64
+                type: integer
+            IsActive:
+                description: Active status of the setting
+                type: boolean
+            SettingID:
+                description: Setting ID
+                format: uint64
+                type: integer
+            UserID:
+                description: User ID
+                format: uint64
+                type: integer
+        required:
+            - ID
+            - UserID
+            - SettingID
+            - IsActive
+        type: object
+        x-go-package: venecraft-back/cmd/entity
+info: {}
+paths:
+    /api/register:
+        post:
+            operationId: createRegister
+            responses:
+                "201":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Creates a registration request for a new user.
+            tags:
+                - register
+    /api/register/approve/{id}:
+        put:
+            operationId: approveRegister
+            responses:
+                "200":
+                    description: User
+                    schema:
+                        $ref: '#/definitions/User'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Approves a user registration request by ID.
+            tags:
+                - register
+    /api/users:
+        get:
+            operationId: getAllUsers
+            responses:
+                "200":
+                    description: User
+                    schema:
+                        items:
+                            $ref: '#/definitions/User'
+                        type: array
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Retrieves all users.
+            tags:
+                - users
+        post:
+            operationId: createUser
+            responses:
+                "201":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "409":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Creates a new user.
+            tags:
+                - users
+    /api/users/{id}:
+        delete:
+            operationId: deleteUser
+            responses:
+                "200":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Deletes a user by ID.
+            tags:
+                - users
+        get:
+            operationId: getUserByID
+            responses:
+                "200":
+                    description: User
+                    schema:
+                        $ref: '#/definitions/User'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "404":
+                    $ref: '#/responses/CommonError'
+            summary: Retrieves a user by their ID.
+            tags:
+                - users
+        put:
+            operationId: updateUser
+            responses:
+                "200":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Updates user information.
+            tags:
+                - users
+    /auth/login:
+        post:
+            operationId: loginUser
+            responses:
+                "200":
+                    $ref: '#/responses/StringResponse'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "401":
+                    $ref: '#/responses/CommonError'
+            summary: Logs in a user by email and password, returning a JWT token.
+            tags:
+                - auth
+responses:
+    CommonError:
+        description: CommonError represents an error response
+        headers:
+            message:
+                description: |-
+                    Error message
+                    required: true
+                type: string
+            status:
+                description: |-
+                    Status of the error
+                    required: true
+                type: string
+    CommonSuccess:
+        description: CommonSuccess represents a successful response
+        headers:
+            message:
+                description: |-
+                    Message detailing the success
+                    required: true
+                type: string
+            status:
+                description: |-
+                    Status of the response
+                    required: true
+                type: string
+    StringResponse:
+        description: ""
+        headers:
+            token:
+                description: Token
+                type: string
+swagger: "2.0"
