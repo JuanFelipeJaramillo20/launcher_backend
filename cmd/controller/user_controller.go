@@ -37,6 +37,16 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		switch err.Error() {
 		case "invalid email format":
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case "invalid nickname (only letters, numbers, and underscores allowed; must be 3-30 characters)":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case "password must be at least 8 characters long":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case "password must contain at least one uppercase letter":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case "password must contain at least one digit":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case "password must contain at least one special character":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		case "user with this email already exists":
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		default:
