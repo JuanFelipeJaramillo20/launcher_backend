@@ -13,7 +13,7 @@ import (
 )
 
 type UserService interface {
-	CreateUser(user *entity.User) error
+	CreateUser(user *entity.User, roleName string) error
 	GetAllUsers() ([]entity.User, error)
 	GetUserByID(id uint64) (*entity.User, error)
 	UpdateUser(user *entity.User) error
@@ -31,30 +31,22 @@ func NewUserService(userRepo repository.UserRepository) UserService {
 	return &userService{userRepo, email.GetEmailClient()}
 }
 
-func (s *userService) CreateUser(user *entity.User) error {
+func (s *userService) CreateUser(user *entity.User, roleName string) error {
 	if user.FullName == "" || user.Email == "" || user.Nickname == "" || user.Password == "" {
 		return errors.New("all fields are required (FullName, Email, Nickname, Password)")
 	}
 
-	if !utils.IsValidEmail(user.Email) {
-		return errors.New("invalid email format")
+	if !utils.IsValidEmail(user.Email) || !utils.IsValidNickname(user.Nickname) {
+		return errors.New("invalid email or nickname format")
 	}
-
-	if !utils.IsValidNickname(user.Nickname) {
-		return errors.New("invalid nickname (only letters, numbers, and underscores allowed; must be 3-30 characters)")
-	}
-
 	if err := utils.IsValidPassword(user.Password); err != nil {
 		return err
 	}
 
-	existingUser, err := s.userRepo.GetUserByEmail(user.Email)
-	if err == nil && existingUser != nil {
+	if existingUser, _ := s.userRepo.GetUserByEmail(user.Email); existingUser != nil {
 		return errors.New("user with this email already exists")
 	}
-
-	existingUser, err = s.userRepo.GetUserByNickname(user.Nickname)
-	if err == nil && existingUser != nil {
+	if existingUser, _ := s.userRepo.GetUserByNickname(user.Nickname); existingUser != nil {
 		return errors.New("user with this nickname already exists")
 	}
 
@@ -64,6 +56,21 @@ func (s *userService) CreateUser(user *entity.User) error {
 	}
 	user.Password = string(hashedPassword)
 
+	if roleName != "" {
+		role, err := s.roleRepo.GetRoleByName(roleName)
+		if err != nil {
+			return errors.New("specified role not found")
+		}
+		user.Roles = append(user.Roles, role)
+	} else {
+		role, err := s.roleRepo.GetRoleByName("PLAYER")
+		if err != nil {
+			return errors.New("default role PLAYER not found")
+		}
+		user.Roles = append(user.Roles, role)
+	}
+
+	// Save the user
 	return s.userRepo.CreateUser(user)
 }
 

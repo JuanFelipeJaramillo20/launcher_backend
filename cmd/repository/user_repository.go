@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"venecraft-back/cmd/entity"
 )
@@ -15,6 +16,7 @@ type UserRepository interface {
 	GetUserByNickname(nickname string) (*entity.User, error)
 	GetUsersByRole(role string) ([]entity.User, error)
 	GetUserByResetToken(resetToken string) (*entity.User, error)
+	HasRole(id uint64, role string) bool
 }
 
 type userRepository struct {
@@ -85,4 +87,20 @@ func (r *userRepository) GetUserByResetToken(resetToken string) (*entity.User, e
 	var user entity.User
 	err := r.db.Where("recover_password_token = ?", resetToken).First(&user).Error
 	return &user, err
+}
+
+func (r *userRepository) HasRole(userID uint64, roleName string) bool {
+	var count int64
+	err := r.db.Table("user_roles").
+		Select("count(*)").
+		Joins("JOIN roles ON roles.id = user_roles.role_id").
+		Where("user_roles.user_id = ? AND roles.name = ?", userID, roleName).
+		Count(&count).Error
+
+	if err != nil {
+		fmt.Printf("Error checking role for user %d: %v\n", userID, err)
+		return false
+	}
+
+	return count > 0
 }

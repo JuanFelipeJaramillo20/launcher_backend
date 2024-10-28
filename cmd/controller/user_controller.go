@@ -3,8 +3,10 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"slices"
 	"strconv"
 	"venecraft-back/cmd/entity"
+	"venecraft-back/cmd/middlewares"
 	"venecraft-back/cmd/service"
 )
 
@@ -26,13 +28,20 @@ func NewUserController(userService service.UserService) *UserController {
 //	409: CommonError
 //	500: CommonError
 func (uc *UserController) CreateUser(c *gin.Context) {
+	_, roles, loggedIn := middlewares.GetLoggedInUser(c)
+	if !loggedIn || !slices.Contains(roles, "ADMIN") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
+
 	var user entity.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	err := uc.UserService.CreateUser(&user)
+	role := c.Query("role")
+	err := uc.UserService.CreateUser(&user, role)
 	if err != nil {
 		switch err.Error() {
 		case "invalid email format":
