@@ -8,6 +8,11 @@ import (
 )
 
 type AdminService interface {
+	CreateUser(user *entity.User, role string) error
+	UpdateUser(user *entity.User) error
+	DeleteUser(userID uint64) error
+	GetUserByID(userID uint64) (*entity.User, error)
+
 	CreatePlayer(player *entity.Player) error
 	UpdatePlayer(player *entity.Player) error
 	DeletePlayer(playerID uint64) error
@@ -39,8 +44,28 @@ func NewAdminService(userRepo repository.UserRepository, playerRepo repository.P
 	}
 }
 
-func (s *adminService) CreatePlayer(player *entity.User) error {
-	return s.userService.CreateUser(player, "PLAYER")
+func (s *adminService) CreateUser(user *entity.User, role string) error {
+	return s.userService.CreateUser(user, role)
+}
+
+func (s *adminService) UpdateUser(user *entity.User) error {
+	return s.userRepo.UpdateUser(user)
+}
+
+func (s *adminService) DeleteUser(userID uint64) error {
+	return s.userRepo.DeleteUser(userID)
+}
+
+func (s *adminService) GetUserByID(userID uint64) (*entity.User, error) {
+	user, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+	return user, nil
+}
+
+func (s *adminService) CreatePlayer(player *entity.Player) error {
+	return s.playerRepo.CreatePlayer(player)
 }
 
 func (s *adminService) UpdatePlayer(player *entity.Player) error {
@@ -64,7 +89,6 @@ func (s *adminService) CreateModerator(mod *entity.User) error {
 }
 
 func (s *adminService) UpdateModerator(mod *entity.User) error {
-	// Verify the user has the moderator role
 	if !s.userRepo.HasRole(mod.ID, "MODERATOR") {
 		return errors.New("user is not a moderator")
 	}
