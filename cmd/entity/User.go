@@ -31,5 +31,5 @@ type User struct {
 	RecoverPasswordTokenExpires time.Time `gorm:"default:null"`
 
 	// List of user roles
-	Roles []Role `gorm:"many2many:user_roles;"`
+	Roles []*Role `gorm:"many2many:user_roles;"`
 }

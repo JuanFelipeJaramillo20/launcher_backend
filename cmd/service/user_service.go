@@ -24,11 +24,12 @@ type UserService interface {
 
 type userService struct {
 	userRepo    repository.UserRepository
+	roleRepo    repository.RoleRepository
 	emailClient *email.EmailClient
 }
 
-func NewUserService(userRepo repository.UserRepository) UserService {
-	return &userService{userRepo, email.GetEmailClient()}
+func NewUserService(userRepo repository.UserRepository, roleRepo repository.RoleRepository) UserService {
+	return &userService{userRepo, roleRepo, email.GetEmailClient()}
 }
 
 func (s *userService) CreateUser(user *entity.User, roleName string) error {
