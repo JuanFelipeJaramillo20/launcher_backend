@@ -98,7 +98,7 @@ func main() {
 	registerRepo := repository.NewRegisterRepository(DB)
 
 	// Initialize services
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserService(userRepo, roleRepo)
 	authService := service.NewAuthService(userRepo)
 	registerService := service.NewRegisterService(registerRepo, userRepo, roleRepo, userRoleRepo)
 
