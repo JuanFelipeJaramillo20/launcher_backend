@@ -128,6 +128,7 @@ func main() {
 	{
 		protected.PUT("/register/approve/:id", registerController.ApproveRegister)
 		protected.PUT("/register/deny/:id", registerController.DenyRegister)
+		protected.GET("/register", registerController.GetAllRegisters)
 		routes.UserRoutes(protected, userController)
 	}
 

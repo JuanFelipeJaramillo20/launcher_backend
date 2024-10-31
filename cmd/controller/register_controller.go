@@ -3,8 +3,10 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"slices"
 	"strconv"
 	"venecraft-back/cmd/entity"
+	"venecraft-back/cmd/middlewares"
 	"venecraft-back/cmd/service"
 )
 
@@ -40,6 +42,28 @@ func (rc *RegisterController) CreateRegister(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "Registration request created successfully"})
 }
 
+// swagger:route GET /api/register registers getAllRegisters
+// Retrieves all registers.
+//
+// Responses:
+//
+//	200: []Register
+//	500: CommonError
+func (rc *RegisterController) GetAllRegisters(c *gin.Context) {
+	_, roles, loggedIn := middlewares.GetLoggedInUser(c)
+	if !loggedIn || !slices.Contains(roles, "ADMIN") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
+
+	registers, err := rc.RegisterService.GetAllRegisters()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, registers)
+}
+
 // swagger:route PUT /api/register/approve/{id} register approveRegister
 // Approves a user registration request by ID.
 //
@@ -49,6 +73,12 @@ func (rc *RegisterController) CreateRegister(c *gin.Context) {
 //	400: CommonError
 //	500: CommonError
 func (rc *RegisterController) ApproveRegister(c *gin.Context) {
+	_, roles, loggedIn := middlewares.GetLoggedInUser(c)
+	if !loggedIn || !slices.Contains(roles, "ADMIN") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
+
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid registration ID"})
@@ -73,6 +103,12 @@ func (rc *RegisterController) ApproveRegister(c *gin.Context) {
 //	400: CommonError
 //	500: CommonError
 func (rc *RegisterController) DenyRegister(c *gin.Context) {
+	_, roles, loggedIn := middlewares.GetLoggedInUser(c)
+	if !loggedIn || !slices.Contains(roles, "ADMIN") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
+
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid registration ID"})
