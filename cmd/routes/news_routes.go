@@ -1,17 +1,19 @@
 package routes
 
 import (
-	"github.com/gin-gonic/gin"
 	"venecraft-back/cmd/controller"
+
+	"github.com/gin-gonic/gin"
 )
 
-func UserRoutes(router *gin.RouterGroup, newsController *controller.NewsController) {
-	userGroup := router.Group("/users")
+func NewsRoutes(router *gin.RouterGroup, newsController *controller.NewsController) {
+	newsGroup := router.Group("/news")
 	{
-		userGroup.POST("/", newsController.CreateNews)
-		userGroup.GET("/", newsController.GetAllNews)
-		userGroup.GET("/:id", newsController.GetNewsByID)
-		userGroup.PUT("/:id", newsController.UpdateNews)
-		userGroup.DELETE("/:id", newsController.DeleteNews)
+		newsGroup.POST("/", newsController.CreateNews)
+		newsGroup.GET("/", newsController.GetAllNews)
+		newsGroup.GET("/latest/:id", newsController.GetLatestNews)
+		newsGroup.GET("/:id", newsController.GetNewsByID)
+		newsGroup.PUT("/:id", newsController.UpdateNews)
+		newsGroup.DELETE("/:id", newsController.DeleteNews)
 	}
 }
