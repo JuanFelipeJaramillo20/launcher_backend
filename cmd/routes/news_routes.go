@@ -11,7 +11,7 @@ func NewsRoutes(router *gin.RouterGroup, newsController *controller.NewsControll
 	{
 		newsGroup.POST("/", newsController.CreateNews)
 		newsGroup.GET("/", newsController.GetAllNews)
-		newsGroup.GET("/latest/:id", newsController.GetLatestNews)
+		newsGroup.GET("/latest/", newsController.GetLatestNews)
 		newsGroup.GET("/:id", newsController.GetNewsByID)
 		newsGroup.PUT("/:id", newsController.UpdateNews)
 		newsGroup.DELETE("/:id", newsController.DeleteNews)

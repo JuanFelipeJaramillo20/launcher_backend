@@ -24,23 +24,34 @@ type AdminService interface {
 	GetModeratorByID(modID uint64) (*entity.User, error)
 
 	BanPlayer(playerID uint64, reason string, duration time.Duration) error
+
+	CreateNews(news *entity.News) error
+	GetAllNews() ([]entity.News, error)
+	GetLatestNews() ([]entity.News, error)
+	GetNewsByID(id uint64) (*entity.News, error)
+	UpdateNews(news *entity.News) error
+	DeleteNews(id uint64) error
 }
 
 type adminService struct {
 	userRepo    repository.UserRepository
+	newsRepo    repository.NewsRepository
 	playerRepo  repository.PlayerRepository
 	banRepo     repository.BanRepository
 	roleRepo    repository.RoleRepository
 	userService UserService
+	newsService NewsService
 }
 
-func NewAdminService(userRepo repository.UserRepository, playerRepo repository.PlayerRepository, banRepo repository.BanRepository, roleRepo repository.RoleRepository, userService UserService) AdminService {
+func NewAdminService(userRepo repository.UserRepository, newsRepo repository.NewsRepository, playerRepo repository.PlayerRepository, banRepo repository.BanRepository, roleRepo repository.RoleRepository, userService UserService, newsService NewsService) AdminService {
 	return &adminService{
 		userRepo:    userRepo,
+		newsRepo:    newsRepo,
 		playerRepo:  playerRepo,
 		banRepo:     banRepo,
 		roleRepo:    roleRepo,
 		userService: userService,
+		newsService: newsService,
 	}
 }
 
@@ -130,4 +141,32 @@ func (s *adminService) BanPlayer(playerID uint64, reason string, duration time.D
 	}
 
 	return nil
+}
+
+func (s *adminService) CreateNews(news *entity.News) error {
+	return s.newsService.CreateNews(news)
+}
+
+func (s *adminService) GetAllNews() ([]entity.News, error) {
+	return s.newsRepo.GetAllNews()
+}
+
+func (s *adminService) GetLatestNews() ([]entity.News, error) {
+	return s.newsRepo.GetLatestNews()
+}
+
+func (s *adminService) GetNewsByID(newsID uint64) (*entity.News, error) {
+	news, err := s.newsRepo.GetNewsByID(newsID)
+	if err != nil {
+		return nil, errors.New("news not found")
+	}
+	return news, nil
+}
+
+func (s *adminService) UpdateNews(news *entity.News) error {
+	return s.newsRepo.UpdateNews(news)
+}
+
+func (s *adminService) DeleteNews(newsID uint64) error {
+	return s.newsRepo.DeleteNews(newsID)
 }

@@ -471,6 +471,88 @@ paths:
             summary: Logs in a user by email and password, returning a JWT token.
             tags:
                 - auth
+    /api/news:
+        get:
+            operationId: getAllNews
+            responses:
+                "200":
+                    description: News
+                    schema:
+                        items:
+                            $ref: '#/definitions/News'
+                        type: array
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Returns all news articles.
+            tags:
+                - news
+        post:
+            operationId: createNews
+            responses:
+                "201":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Creates a new news article.
+            tags:
+                - news
+    /api/news/latest:
+        get:
+            operationId: getLatestNews
+            responses:
+                "200":
+                    description: Latest news list
+                    schema:
+                        items:
+                            $ref: '#/definitions/News'
+                        type: array
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Returns all latest news articles.
+            tags:
+                - news
+
+    /api/news/{id}:
+        get:
+            operationId: getNewsByID
+            responses:
+                "200":
+                    description: News
+                    schema:
+                        $ref: '#/definitions/News'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "404":
+                    $ref: '#/responses/CommonError'
+            summary: Returns a news article by its ID.
+            tags:
+                - news
+        put:
+            operationId: updateNews
+            responses:
+                "200":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Updates a news article by its ID.
+            tags:
+                - news
+        delete:
+            operationId: deleteNews
+            responses:
+                "200":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Deletes a news article by its ID.
+            tags:
+                - news
 responses:
     CommonError:
         description: CommonError represents an error response

@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"venecraft-back/cmd/entity"
 	"venecraft-back/cmd/repository"
 )
@@ -50,9 +51,8 @@ func (s *newsService) GetNewsByID(id uint64) (*entity.News, error) {
 }
 
 func (s *newsService) UpdateNews(news *entity.News) error {
-	if news.ID == 0 {
-		return errors.New("the ID must be provided")
-	}
+	fmt.Print(news)
+	fmt.Print(news.ID)
 	return s.newsRepo.UpdateNews(news)
 }
 

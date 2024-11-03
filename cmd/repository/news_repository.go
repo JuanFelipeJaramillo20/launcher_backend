@@ -60,10 +60,7 @@ func (r *newsRepository) GetLatestNews() ([]entity.News, error) {
 }
 
 func (r *newsRepository) UpdateNews(news *entity.News) error {
-	if err := r.db.Save(news).Error; err != nil {
-		return err
-	}
-	return nil
+	return r.db.Save(news).Error
 }
 
 func (r *newsRepository) DeleteNews(id uint64) error {
