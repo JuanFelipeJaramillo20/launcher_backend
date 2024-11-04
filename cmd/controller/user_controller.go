@@ -10,6 +10,86 @@ import (
 	"venecraft-back/cmd/service"
 )
 
+// Request model for user creation
+// swagger:model CreateUserRequest
+type CreateUserRequest struct {
+	// Full name of the user
+	// required: true
+	FullName string `json:"full_name"`
+
+	// Email address of the user
+	// required: true
+	// example: user@example.com
+	Email string `json:"email"`
+
+	// Nickname for the user
+	// required: true
+	Nickname string `json:"nickname"`
+
+	// Password for the user account
+	// required: true
+	// min length: 8
+	Password string `json:"password"`
+}
+
+// Parameters for creating a user
+// swagger:parameters createUser
+type CreateUserParams struct {
+	// User details for account creation
+	// in: body
+	// required: true
+	Body CreateUserRequest
+}
+
+// Parameters for retrieving, updating, or deleting a user by ID
+// swagger:parameters getUserByID updateUser deleteUser
+type UserIDParams struct {
+	// ID of the user
+	// in: path
+	// required: true
+	ID uint64 `json:"id"`
+}
+
+// Request model for password reset initiation
+// swagger:model PasswordResetRequest
+type PasswordResetRequest struct {
+	// Email address to send the reset link
+	// required: true
+	// example: user@example.com
+	Email string `json:"email"`
+}
+
+// Parameters for initiating password reset
+// swagger:parameters passwordResetRequest
+type PasswordResetParams struct {
+	// Password reset details
+	// in: body
+	// required: true
+	Body PasswordResetRequest
+}
+
+// Request model for password reset
+// swagger:model ResetPasswordRequest
+type ResetPasswordRequest struct {
+	// Token for password reset verification
+	// required: true
+	Token string `json:"token"`
+
+	// New password for the user
+	// required: true
+	// min length: 8
+	NewPassword string `json:"newPassword"`
+}
+
+// Parameters for resetting the password
+// swagger:parameters resetPassword
+type ResetPasswordParams struct {
+	// Password reset details
+	// in: body
+	// required: true
+	Body ResetPasswordRequest
+}
+
 type UserController struct {
 	UserService service.UserService
 }
@@ -21,7 +101,10 @@ func NewUserController(userService service.UserService) *UserController {
 // swagger:route POST /api/users users createUser
 // Creates a new user.
 //
-// Responses:
+// Security:
+//   - BearerAuth: []
+//
+// responses:
 //
 //	201: CommonSuccess
 //	400: CommonError
@@ -34,33 +117,27 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	var user entity.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var request CreateUserRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
+	}
+
+	user := entity.User{
+		FullName: request.FullName,
+		Email:    request.Email,
+		Nickname: request.Nickname,
+		Password: request.Password,
 	}
 
 	role := c.Query("role")
 	err := uc.UserService.CreateUser(&user, role)
 	if err != nil {
-		switch err.Error() {
-		case "invalid email format":
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		case "invalid nickname (only letters, numbers, and underscores allowed; must be 3-30 characters)":
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		case "password must be at least 8 characters long":
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		case "password must contain at least one uppercase letter":
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		case "password must contain at least one digit":
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		case "password must contain at least one special character":
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		case "user with this email already exists":
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		status := http.StatusInternalServerError
+		if err.Error() == "user with this email already exists" {
+			status = http.StatusConflict
 		}
+		c.JSON(status, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -70,7 +147,10 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 // swagger:route GET /api/users users getAllUsers
 // Retrieves all users.
 //
-// Responses:
+// Security:
+//   - BearerAuth: []
+//
+// responses:
 //
 //	200: []User
 //	500: CommonError
@@ -86,7 +166,10 @@ func (uc *UserController) GetAllUsers(c *gin.Context) {
 // swagger:route GET /api/users/{id} users getUserByID
 // Retrieves a user by their ID.
 //
-// Responses:
+// Security:
+//   - BearerAuth: []
+//
+// responses:
 //
 //	200: User
 //	400: CommonError
@@ -110,7 +193,10 @@ func (uc *UserController) GetUserByID(c *gin.Context) {
 // swagger:route PUT /api/users/{id} users updateUser
 // Updates user information.
 //
-// Responses:
+// Security:
+//   - BearerAuth: []
+//
+// responses:
 //
 //	200: CommonSuccess
 //	400: CommonError
@@ -134,7 +220,10 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 // swagger:route DELETE /api/users/{id} users deleteUser
 // Deletes a user by ID.
 //
-// Responses:
+// Security:
+//   - BearerAuth: []
+//
+// responses:
 //
 //	200: CommonSuccess
 //	400: CommonError
@@ -155,13 +244,16 @@ func (uc *UserController) DeleteUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
 
-// PasswordResetRequest Initiates a password reset request.
 // swagger:route POST /api/password-reset-request users passwordResetRequest
+// Initiates a password reset request.
+//
+// responses:
+//
+//	200: CommonSuccess
+//	400: CommonError
+//	500: CommonError
 func (uc *UserController) PasswordResetRequest(c *gin.Context) {
-	var req struct {
-		Email string `json:"email" binding:"required,email"`
-	}
-
+	var req PasswordResetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email address"})
 		return
@@ -176,14 +268,16 @@ func (uc *UserController) PasswordResetRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset email sent"})
 }
 
-// ResetPassword Resets the password using a token.
 // swagger:route POST /api/reset-password users resetPassword
+// Resets the password using a token.
+//
+// responses:
+//
+//	200: CommonSuccess
+//	400: CommonError
+//	500: CommonError
 func (uc *UserController) ResetPassword(c *gin.Context) {
-	var req struct {
-		Token       string `json:"token" binding:"required"`
-		NewPassword string `json:"newPassword" binding:"required,min=8"`
-	}
-
+	var req ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
