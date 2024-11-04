@@ -691,6 +691,139 @@ paths:
             summary: Logs in a user by email and password, returning a JWT token.
             tags:
                 - auth
+    /api/news:
+        get:
+            operationId: getAllNews
+            responses:
+                "200":
+                    description: News
+                    schema:
+                        items:
+                            $ref: '#/definitions/News'
+                        type: array
+                "500":
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'      
+            summary: Returns all news articles.
+            tags:
+                - news
+        post:
+            operationId: createNews
+             parameters:
+                - description: News details for a news article creation
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/CreateNewsRequest'
+            responses:
+                "201":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
+            summary: Creates a new news article.
+            tags:
+                - news
+    /api/news/latest:
+        get:
+            operationId: getLatestNews
+            responses:
+                "200":
+                    description: Latest news list
+                    schema:
+                        items:
+                            $ref: '#/definitions/News'
+                        type: array
+                "500":
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
+            summary: Returns all latest news articles.
+            tags:
+                - news
+
+    /api/news/{id}:
+        get:
+            operationId: getNewsByID
+            
+            parameters:
+                - description: ID of the news
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+
+            responses:
+                "200":
+                    description: News
+                    schema:
+                        $ref: '#/definitions/News'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "404":
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
+            summary: Returns a news article by its ID.
+            tags:
+                - news
+        put:
+            operationId: updateNews
+            parameters:
+                - description: ID of the news
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+            responses:
+                "200":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
+            summary: Updates a news article by its ID.
+            tags:
+                - news
+        delete:
+            operationId: deleteNews
+            parameters:
+                - description: ID of the news
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+            responses:
+                "200":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
+            summary: Deletes a news article by its ID.
+            tags:
+                - news
 responses:
     CommonError:
         description: CommonError represents an error response

@@ -17,12 +17,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"github.com/go-openapi/runtime/middleware"
-	"github.com/joho/godotenv"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"log"
 	"os"
 	"time"
@@ -33,6 +27,13 @@ import (
 	"venecraft-back/cmd/routes"
 	"venecraft-back/cmd/seeds"
 	"venecraft-back/cmd/service"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
@@ -96,16 +97,19 @@ func main() {
 	roleRepo := repository.NewRoleRepository(DB)
 	userRoleRepo := repository.NewUserRoleRepository(DB)
 	registerRepo := repository.NewRegisterRepository(DB)
+	newsRepo := repository.NewNewsRepository(DB)
 
 	// Initialize services
 	userService := service.NewUserService(userRepo, roleRepo)
 	authService := service.NewAuthService(userRepo)
 	registerService := service.NewRegisterService(registerRepo, userRepo, roleRepo, userRoleRepo)
+	newsService := service.NewNewsService(newsRepo)
 
 	// Initialize controllers
 	userController := controller.NewUserController(userService)
 	authController := controller.NewAuthController(authService)
 	registerController := controller.NewRegisterController(registerService)
+	newsController := controller.NewNewsController(newsService)
 
 	server := gin.Default()
 
@@ -130,6 +134,7 @@ func main() {
 		protected.PUT("/register/deny/:id", registerController.DenyRegister)
 		protected.GET("/register", registerController.GetAllRegisters)
 		routes.UserRoutes(protected, userController)
+		routes.NewsRoutes(protected, newsController)
 	}
 
 	// Health check route
