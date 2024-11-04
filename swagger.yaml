@@ -30,6 +30,34 @@ definitions:
             - BanDate
         type: object
         x-go-package: venecraft-back/cmd/entity
+    CreateUserRequest:
+        description: Request model for user creation
+        properties:
+            email:
+                description: Email address of the user
+                example: user@example.com
+                type: string
+                x-go-name: Email
+            full_name:
+                description: Full name of the user
+                type: string
+                x-go-name: FullName
+            nickname:
+                description: Nickname for the user
+                type: string
+                x-go-name: Nickname
+            password:
+                description: Password for the user account
+                minLength: 8
+                type: string
+                x-go-name: Password
+        required:
+            - full_name
+            - email
+            - nickname
+            - password
+        type: object
+        x-go-package: venecraft-back/cmd/controller
     Duration:
         description: |-
             A Duration represents the elapsed time between two instants
@@ -62,6 +90,24 @@ definitions:
             - Timestamp
         type: object
         x-go-package: venecraft-back/cmd/entity
+    LoginRequest:
+        description: Request model for login credentials
+        properties:
+            email:
+                description: The email address for login
+                example: user@example.com
+                type: string
+                x-go-name: Email
+            password:
+                description: The password for login
+                minLength: 8
+                type: string
+                x-go-name: Password
+        required:
+            - email
+            - password
+        type: object
+        x-go-package: venecraft-back/cmd/controller
     News:
         properties:
             Content:
@@ -90,6 +136,18 @@ definitions:
             - CreatedAt
         type: object
         x-go-package: venecraft-back/cmd/entity
+    PasswordResetRequest:
+        description: Request model for password reset initiation
+        properties:
+            email:
+                description: Email address to send the reset link
+                example: user@example.com
+                type: string
+                x-go-name: Email
+        required:
+            - email
+        type: object
+        x-go-package: venecraft-back/cmd/controller
     Permission:
         properties:
             ID:
@@ -162,6 +220,51 @@ definitions:
             - Password
         type: object
         x-go-package: venecraft-back/cmd/entity
+    RegisterRequest:
+        description: Request model for registration details
+        properties:
+            email:
+                description: Email address for registration
+                example: user@example.com
+                type: string
+                x-go-name: Email
+            full_name:
+                description: Full name for registration
+                type: string
+                x-go-name: FullName
+            nickname:
+                description: Nickname chosen for registration
+                type: string
+                x-go-name: Nickname
+            password:
+                description: Password for registration
+                minLength: 8
+                type: string
+                x-go-name: Password
+        required:
+            - full_name
+            - email
+            - nickname
+            - password
+        type: object
+        x-go-package: venecraft-back/cmd/controller
+    ResetPasswordRequest:
+        description: Request model for password reset
+        properties:
+            newPassword:
+                description: New password for the user
+                minLength: 8
+                type: string
+                x-go-name: NewPassword
+            token:
+                description: Token for password reset verification
+                type: string
+                x-go-name: Token
+        required:
+            - token
+            - newPassword
+        type: object
+        x-go-package: venecraft-back/cmd/controller
     Role:
         properties:
             ID:
@@ -326,6 +429,21 @@ paths:
     /api/password-reset-request:
         post:
             operationId: passwordResetRequest
+            parameters:
+                - description: Password reset details
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/PasswordResetRequest'
+            responses:
+                "200":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Initiates a password reset request.
             tags:
                 - users
     /api/register:
@@ -338,13 +456,25 @@ paths:
                         items:
                             $ref: '#/definitions/Register'
                         type: array
+                "403":
+                    $ref: '#/responses/CommonError'
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Retrieves all registers.
             tags:
-                - registers
+                - register
         post:
             operationId: createRegister
+            parameters:
+                - description: Registration details
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/RegisterRequest'
             responses:
                 "201":
                     $ref: '#/responses/CommonSuccess'
@@ -358,6 +488,14 @@ paths:
     /api/register/approve/{id}:
         put:
             operationId: approveRegister
+            parameters:
+                - description: ID of the registration request
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
             responses:
                 "200":
                     description: User
@@ -367,27 +505,54 @@ paths:
                     $ref: '#/responses/CommonError'
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Approves a user registration request by ID.
             tags:
                 - register
     /api/register/deny/{id}:
         put:
             operationId: denyRegister
+            parameters:
+                - description: ID of the registration request
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
             responses:
                 "200":
-                    description: User
-                    schema:
-                        $ref: '#/definitions/User'
+                    $ref: '#/responses/CommonSuccess'
                 "400":
                     $ref: '#/responses/CommonError'
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Denies a user registration request by ID.
             tags:
                 - register
     /api/reset-password:
         post:
             operationId: resetPassword
+            parameters:
+                - description: Password reset details
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/ResetPasswordRequest'
+            responses:
+                "200":
+                    $ref: '#/responses/CommonSuccess'
+                "400":
+                    $ref: '#/responses/CommonError'
+                "500":
+                    $ref: '#/responses/CommonError'
+            summary: Resets the password using a token.
             tags:
                 - users
     /api/users:
@@ -402,11 +567,21 @@ paths:
                         type: array
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Retrieves all users.
             tags:
                 - users
         post:
             operationId: createUser
+            parameters:
+                - description: User details for account creation
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/CreateUserRequest'
             responses:
                 "201":
                     $ref: '#/responses/CommonSuccess'
@@ -416,12 +591,23 @@ paths:
                     $ref: '#/responses/CommonError'
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Creates a new user.
             tags:
                 - users
     /api/users/{id}:
         delete:
             operationId: deleteUser
+            parameters:
+                - description: ID of the user
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
             responses:
                 "200":
                     $ref: '#/responses/CommonSuccess'
@@ -429,11 +615,22 @@ paths:
                     $ref: '#/responses/CommonError'
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Deletes a user by ID.
             tags:
                 - users
         get:
             operationId: getUserByID
+            parameters:
+                - description: ID of the user
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
             responses:
                 "200":
                     description: User
@@ -443,11 +640,22 @@ paths:
                     $ref: '#/responses/CommonError'
                 "404":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Retrieves a user by their ID.
             tags:
                 - users
         put:
             operationId: updateUser
+            parameters:
+                - description: ID of the user
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
             responses:
                 "200":
                     $ref: '#/responses/CommonSuccess'
@@ -455,12 +663,24 @@ paths:
                     $ref: '#/responses/CommonError'
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Updates user information.
             tags:
                 - users
     /auth/login:
         post:
+            consumes:
+                - application/json
             operationId: loginUser
+            parameters:
+                - description: Login credentials
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/LoginRequest'
             responses:
                 "200":
                     $ref: '#/responses/StringResponse'
@@ -502,6 +722,16 @@ responses:
         description: ""
         headers:
             token:
-                description: Token
+                description: JWT token returned after successful authentication
                 type: string
 swagger: "2.0"
+
+securityDefinitions:
+    BearerAuth:
+        type: apiKey
+        name: Authorization
+        in: header
+        description: "Bearer token for API access"
+
+security:
+    - BearerAuth: []
