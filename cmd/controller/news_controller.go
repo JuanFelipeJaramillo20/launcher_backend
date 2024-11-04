@@ -11,6 +11,41 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Request model for news creation
+// swagger:model CreateNewsRequest
+
+type CreateNewsRequest struct {
+	// Title for the news article
+	// required: true
+	Title string `json:"title"`
+
+	// Main content of the news
+	// required: true
+	Content string `json:"content"`
+
+	// User ID
+	// required: true
+	CreatedBy uint64 `json:"created_by"`
+}
+
+// Parameters for creating a news
+// swagger:parameters createNews
+type CreateNewsParams struct {
+	// news details for a news article creation
+	// in: body
+	// required: true
+	Body CreateNewsRequest
+}
+
+// Parameters for retrieving, updating, or deleting a news by ID
+// swagger:parameters getNewsByID updateNews deleteNews
+type UserNewsParams struct {
+	// ID of the news
+	// in: path
+	// required: true
+	ID uint64 `json:"id"`
+}
+
 type NewsController struct {
 	NewsService service.NewsService
 }
@@ -22,6 +57,9 @@ func NewNewsController(newsService service.NewsService) *NewsController {
 // swagger:route POST /api/news news createNews
 // Creates a new news article.
 //
+// Security:
+//   - BearerAuth: []
+//
 // Responses:
 //
 //	201: CommonSuccess
@@ -29,19 +67,24 @@ func NewNewsController(newsService service.NewsService) *NewsController {
 //	403: CommonError
 //	500: CommonError
 func (nc *NewsController) CreateNews(c *gin.Context) {
-	userID, roles, authenticated := middlewares.GetLoggedInUser(c)
+	_, roles, authenticated := middlewares.GetLoggedInUser(c)
 	if !authenticated || !slices.Contains(roles, "ADMIN") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
 		return
 	}
 
-	var news entity.News
-	if err := c.ShouldBindJSON(&news); err != nil {
+	var request CreateNewsRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	news.CreatedBy = userID
+	news := entity.News{
+		Title:     request.Title,
+		Content:   request.Content,
+		CreatedBy: request.CreatedBy,
+	}
+
 	if err := nc.NewsService.CreateNews(&news); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -51,6 +94,9 @@ func (nc *NewsController) CreateNews(c *gin.Context) {
 
 // swagger:route GET /api/news news getAllNews
 // Returns all news articles.
+//
+// Security:
+//   - BearerAuth: []
 //
 // Responses:
 //
@@ -68,6 +114,9 @@ func (nc *NewsController) GetAllNews(c *gin.Context) {
 // swagger:route GET /api/news/latest news getLatestNews
 // Returns the latest news articles.
 //
+//Security:
+//   - BearerAuth: []
+//
 // Responses:
 //
 //   200: NewsListResponse
@@ -84,6 +133,9 @@ func (nc *NewsController) GetLatestNews(c *gin.Context) {
 
 // swagger:route GET /api/news/{id} news getNewsByID
 // Returns a news article by its ID.
+//
+// Security:
+//   - BearerAuth: []
 //
 // Responses:
 //
@@ -115,6 +167,9 @@ func (nc *NewsController) GetNewsByID(c *gin.Context) {
 // swagger:route PUT /api/news news updateNews
 // Updates an existing news article.
 //
+// Security:
+//   - BearerAuth: []
+//
 // Responses:
 //
 //	200: NewsResponse
@@ -145,6 +200,9 @@ func (nc *NewsController) UpdateNews(c *gin.Context) {
 
 // swagger:route DELETE /api/news/{id} news deleteNews
 // Deletes a news article by its ID.
+//
+// Security:
+//   - BearerAuth: []
 //
 // Responses:
 //

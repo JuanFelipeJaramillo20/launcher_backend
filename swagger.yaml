@@ -483,11 +483,21 @@ paths:
                         type: array
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'      
             summary: Returns all news articles.
             tags:
                 - news
         post:
             operationId: createNews
+             parameters:
+                - description: News details for a news article creation
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/CreateNewsRequest'
             responses:
                 "201":
                     $ref: '#/responses/CommonSuccess'
@@ -495,6 +505,9 @@ paths:
                     $ref: '#/responses/CommonError'
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Creates a new news article.
             tags:
                 - news
@@ -510,6 +523,9 @@ paths:
                         type: array
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Returns all latest news articles.
             tags:
                 - news
@@ -517,6 +533,16 @@ paths:
     /api/news/{id}:
         get:
             operationId: getNewsByID
+            
+            parameters:
+                - description: ID of the news
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+
             responses:
                 "200":
                     description: News
@@ -526,11 +552,22 @@ paths:
                     $ref: '#/responses/CommonError'
                 "404":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Returns a news article by its ID.
             tags:
                 - news
         put:
             operationId: updateNews
+            parameters:
+                - description: ID of the news
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
             responses:
                 "200":
                     $ref: '#/responses/CommonSuccess'
@@ -538,11 +575,22 @@ paths:
                     $ref: '#/responses/CommonError'
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Updates a news article by its ID.
             tags:
                 - news
         delete:
             operationId: deleteNews
+            parameters:
+                - description: ID of the news
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
             responses:
                 "200":
                     $ref: '#/responses/CommonSuccess'
@@ -550,6 +598,9 @@ paths:
                     $ref: '#/responses/CommonError'
                 "500":
                     $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth:
+                    - '[]'
             summary: Deletes a news article by its ID.
             tags:
                 - news
@@ -584,6 +635,16 @@ responses:
         description: ""
         headers:
             token:
-                description: Token
+                description: JWT token returned after successful authentication
                 type: string
 swagger: "2.0"
+
+securityDefinitions:
+    BearerAuth:
+        type: apiKey
+        name: Authorization
+        in: header
+        description: "Bearer token for API access"
+
+security:
+    - BearerAuth: []
