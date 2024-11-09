@@ -7,6 +7,7 @@ import (
 
 type RegisterRepository interface {
 	CreateRegister(register *entity.Register) error
+	GetAllRegisters() ([]entity.Register, error)
 	GetRegisterByID(id uint64) (*entity.Register, error)
 	DeleteRegister(id uint64) error
 	UpdateRegister(register *entity.Register) error
@@ -22,6 +23,12 @@ func NewRegisterRepository(db *gorm.DB) RegisterRepository {
 
 func (r *registerRepository) CreateRegister(register *entity.Register) error {
 	return r.db.Create(register).Error
+}
+
+func (r *registerRepository) GetAllRegisters() ([]entity.Register, error) {
+	var registers []entity.Register
+	err := r.db.Find(&registers).Error
+	return registers, err
 }
 
 func (r *registerRepository) GetRegisterByID(id uint64) (*entity.Register, error) {

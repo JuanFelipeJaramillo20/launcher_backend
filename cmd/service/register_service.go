@@ -14,6 +14,7 @@ import (
 
 type RegisterService interface {
 	CreateRegister(register *entity.Register) error
+	GetAllRegisters() ([]entity.Register, error)
 	ApproveRegister(id uint64) (*entity.User, error)
 	DenyRegister(id uint64) error
 }
@@ -83,6 +84,10 @@ func (s *registerService) CreateRegister(register *entity.Register) error {
 
 	log.Println("Registration emails sent successfully.")
 	return nil
+}
+
+func (s *registerService) GetAllRegisters() ([]entity.Register, error) {
+	return s.registerRepo.GetAllRegisters()
 }
 
 func (s *registerService) ApproveRegister(id uint64) (*entity.User, error) {
