@@ -32,4 +32,7 @@ type User struct {
 
 	// List of user roles
 	Roles []*Role `gorm:"many2many:user_roles;"`
+
+	// Active status of the user
+	IsActive bool `json:"is_active" gorm:"default:true"`
 }
