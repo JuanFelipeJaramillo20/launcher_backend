@@ -1,3 +1,4 @@
+swagger: '2.0'
 definitions:
     Ban:
         properties:
@@ -30,6 +31,27 @@ definitions:
             - BanDate
         type: object
         x-go-package: venecraft-back/cmd/entity
+    CreateNewsRequest:
+        properties:
+            content:
+                description: Main content of the news
+                type: string
+                x-go-name: Content
+            created_by:
+                description: User ID
+                format: uint64
+                type: integer
+                x-go-name: CreatedBy
+            title:
+                description: Title for the news article
+                type: string
+                x-go-name: Title
+        required:
+            - title
+            - content
+            - created_by
+        type: object
+        x-go-package: venecraft-back/cmd/controller
     CreateUserRequest:
         description: Request model for user creation
         properties:
@@ -110,30 +132,35 @@ definitions:
         x-go-package: venecraft-back/cmd/controller
     News:
         properties:
-            Content:
+            content:
                 description: Content of the news article
                 type: string
-            CreatedAt:
+                x-go-name: Content
+            created_at:
                 description: Creation timestamp
                 format: date-time
                 type: string
-            CreatedBy:
+                x-go-name: CreatedAt
+            created_by:
                 description: ID of the user who created this news article
                 format: uint64
                 type: integer
-            ID:
+                x-go-name: CreatedBy
+            id:
                 description: News ID
                 format: uint64
                 type: integer
-            Title:
+                x-go-name: ID
+            title:
                 description: Title of the news article
                 type: string
+                x-go-name: Title
         required:
-            - ID
-            - Title
-            - Content
-            - CreatedBy
-            - CreatedAt
+            - id
+            - title
+            - content
+            - created_by
+            - created_at
         type: object
         x-go-package: venecraft-back/cmd/entity
     PasswordResetRequest:
@@ -424,8 +451,138 @@ definitions:
             - IsActive
         type: object
         x-go-package: venecraft-back/cmd/entity
-info: {}
+info: { version: "1.0",title: "Test API" }
 paths:
+    /api/news:
+        get:
+            operationId: getAllNews
+            responses:
+                '200':
+                    description: News
+                    schema:
+                        items:
+                            $ref: '#/definitions/News'
+                        type: array
+                '500':
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth: []
+            summary: Returns all news articles.
+            tags:
+                - news
+        post:
+            operationId: createNews
+            parameters:
+                - description: news details for a news article creation
+                  in: body
+                  name: Body
+                  required: true
+                  schema:
+                      $ref: '#/definitions/CreateNewsRequest'
+            responses:
+                '201':
+                    $ref: '#/responses/CommonSuccess'
+                '400':
+                    $ref: '#/responses/CommonError'
+                '403':
+                    $ref: '#/responses/CommonError'
+                '500':
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth: []
+            summary: Creates a new news article.
+            tags:
+                - news
+    '/api/news/{id}':
+        put:
+            operationId: updateNews
+            parameters:
+                - description: ID of the news
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+            responses:
+                '200':
+                    $ref: '#/responses/CommonSuccess'
+                '400':
+                    $ref: '#/responses/CommonError'
+                '403':
+                    $ref: '#/responses/CommonError'
+                '500':
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth: [ ]
+            summary: Updates an existing news article.
+            tags:
+                - news
+        delete:
+            operationId: deleteNews
+            parameters:
+                - description: ID of the news
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+            responses:
+                '200':
+                    $ref: '#/responses/CommonSuccess'
+                '400':
+                    $ref: '#/responses/CommonError'
+                '500':
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth: []
+            summary: Deletes a news article by its ID.
+            tags:
+                - news
+        get:
+            operationId: getNewsByID
+            parameters:
+                - description: ID of the news
+                  format: uint64
+                  in: path
+                  name: id
+                  required: true
+                  type: integer
+                  x-go-name: ID
+            responses:
+                '200':
+                    description: News
+                    schema:
+                        $ref: '#/definitions/News'
+                '400':
+                    $ref: '#/responses/CommonError'
+                '404':
+                    $ref: '#/responses/CommonError'
+                '500':
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth: []
+            summary: Returns a news article by its ID.
+            tags:
+                - news
+    /api/news/latest:
+        get:
+            operationId: getLatestNews
+            responses:
+                '200':
+                    description: News
+                    schema:
+                        items:
+                            $ref: '#/definitions/News'
+                        type: array
+                '500':
+                    $ref: '#/responses/CommonError'
+            security:
+                - BearerAuth: []
+            summary: Returns the latest news articles.
+            tags:
+                - news
     /api/password-reset-request:
         post:
             operationId: passwordResetRequest
@@ -435,13 +592,13 @@ paths:
                   name: Body
                   required: true
                   schema:
-                    $ref: '#/definitions/PasswordResetRequest'
+                      $ref: '#/definitions/PasswordResetRequest'
             responses:
-                "200":
+                '200':
                     $ref: '#/responses/CommonSuccess'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             summary: Initiates a password reset request.
             tags:
@@ -450,19 +607,18 @@ paths:
         get:
             operationId: getAllRegisters
             responses:
-                "200":
+                '200':
                     description: Register
                     schema:
                         items:
                             $ref: '#/definitions/Register'
                         type: array
-                "403":
+                '403':
                     $ref: '#/responses/CommonError'
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             security:
-                - BearerAuth:
-                    - '[]'
+                - BearerAuth: []
             summary: Retrieves all registers.
             tags:
                 - register
@@ -474,18 +630,18 @@ paths:
                   name: Body
                   required: true
                   schema:
-                    $ref: '#/definitions/RegisterRequest'
+                      $ref: '#/definitions/RegisterRequest'
             responses:
-                "201":
+                '201':
                     $ref: '#/responses/CommonSuccess'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             summary: Creates a registration request for a new user.
             tags:
                 - register
-    /api/register/approve/{id}:
+    '/api/register/approve/{id}':
         put:
             operationId: approveRegister
             parameters:
@@ -497,21 +653,20 @@ paths:
                   type: integer
                   x-go-name: ID
             responses:
-                "200":
+                '200':
                     description: User
                     schema:
                         $ref: '#/definitions/User'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             security:
-                - BearerAuth:
-                    - '[]'
+                - BearerAuth: []
             summary: Approves a user registration request by ID.
             tags:
                 - register
-    /api/register/deny/{id}:
+    '/api/register/deny/{id}':
         put:
             operationId: denyRegister
             parameters:
@@ -523,15 +678,14 @@ paths:
                   type: integer
                   x-go-name: ID
             responses:
-                "200":
+                '200':
                     $ref: '#/responses/CommonSuccess'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             security:
-                - BearerAuth:
-                    - '[]'
+                - BearerAuth: []
             summary: Denies a user registration request by ID.
             tags:
                 - register
@@ -544,13 +698,13 @@ paths:
                   name: Body
                   required: true
                   schema:
-                    $ref: '#/definitions/ResetPasswordRequest'
+                      $ref: '#/definitions/ResetPasswordRequest'
             responses:
-                "200":
+                '200':
                     $ref: '#/responses/CommonSuccess'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             summary: Resets the password using a token.
             tags:
@@ -559,17 +713,16 @@ paths:
         get:
             operationId: getAllUsers
             responses:
-                "200":
+                '200':
                     description: User
                     schema:
                         items:
                             $ref: '#/definitions/User'
                         type: array
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             security:
-                - BearerAuth:
-                    - '[]'
+                - BearerAuth: []
             summary: Retrieves all users.
             tags:
                 - users
@@ -581,23 +734,22 @@ paths:
                   name: Body
                   required: true
                   schema:
-                    $ref: '#/definitions/CreateUserRequest'
+                      $ref: '#/definitions/CreateUserRequest'
             responses:
-                "201":
+                '201':
                     $ref: '#/responses/CommonSuccess'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "409":
+                '409':
                     $ref: '#/responses/CommonError'
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             security:
-                - BearerAuth:
-                    - '[]'
+                - BearerAuth: []
             summary: Creates a new user.
             tags:
                 - users
-    /api/users/{id}:
+    '/api/users/{id}':
         delete:
             operationId: deleteUser
             parameters:
@@ -609,15 +761,14 @@ paths:
                   type: integer
                   x-go-name: ID
             responses:
-                "200":
+                '200':
                     $ref: '#/responses/CommonSuccess'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             security:
-                - BearerAuth:
-                    - '[]'
+                - BearerAuth: []
             summary: Deletes a user by ID.
             tags:
                 - users
@@ -632,17 +783,16 @@ paths:
                   type: integer
                   x-go-name: ID
             responses:
-                "200":
+                '200':
                     description: User
                     schema:
                         $ref: '#/definitions/User'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "404":
+                '404':
                     $ref: '#/responses/CommonError'
             security:
-                - BearerAuth:
-                    - '[]'
+                - BearerAuth: []
             summary: Retrieves a user by their ID.
             tags:
                 - users
@@ -657,15 +807,14 @@ paths:
                   type: integer
                   x-go-name: ID
             responses:
-                "200":
+                '200':
                     $ref: '#/responses/CommonSuccess'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "500":
+                '500':
                     $ref: '#/responses/CommonError'
             security:
-                - BearerAuth:
-                    - '[]'
+                - BearerAuth: []
             summary: Updates user information.
             tags:
                 - users
@@ -680,184 +829,42 @@ paths:
                   name: Body
                   required: true
                   schema:
-                    $ref: '#/definitions/LoginRequest'
+                      $ref: '#/definitions/LoginRequest'
             responses:
-                "200":
+                '200':
                     $ref: '#/responses/StringResponse'
-                "400":
+                '400':
                     $ref: '#/responses/CommonError'
-                "401":
+                '401':
                     $ref: '#/responses/CommonError'
-            summary: Logs in a user by email and password, returning a JWT token.
+            summary: 'Logs in a user by email and password, returning a JWT token.'
             tags:
                 - auth
-    /api/news:
-        get:
-            operationId: getAllNews
-            responses:
-                "200":
-                    description: News
-                    schema:
-                        items:
-                            $ref: '#/definitions/News'
-                        type: array
-                "500":
-                    $ref: '#/responses/CommonError'
-            security:
-                - BearerAuth:
-                    - '[]'      
-            summary: Returns all news articles.
-            tags:
-                - news
-        post:
-            operationId: createNews
-             parameters:
-                - description: News details for a news article creation
-                  in: body
-                  name: Body
-                  required: true
-                  schema:
-                    $ref: '#/definitions/CreateNewsRequest'
-            responses:
-                "201":
-                    $ref: '#/responses/CommonSuccess'
-                "400":
-                    $ref: '#/responses/CommonError'
-                "500":
-                    $ref: '#/responses/CommonError'
-            security:
-                - BearerAuth:
-                    - '[]'
-            summary: Creates a new news article.
-            tags:
-                - news
-    /api/news/latest:
-        get:
-            operationId: getLatestNews
-            responses:
-                "200":
-                    description: Latest news list
-                    schema:
-                        items:
-                            $ref: '#/definitions/News'
-                        type: array
-                "500":
-                    $ref: '#/responses/CommonError'
-            security:
-                - BearerAuth:
-                    - '[]'
-            summary: Returns all latest news articles.
-            tags:
-                - news
-
-    /api/news/{id}:
-        get:
-            operationId: getNewsByID
-            
-            parameters:
-                - description: ID of the news
-                  format: uint64
-                  in: path
-                  name: id
-                  required: true
-                  type: integer
-                  x-go-name: ID
-
-            responses:
-                "200":
-                    description: News
-                    schema:
-                        $ref: '#/definitions/News'
-                "400":
-                    $ref: '#/responses/CommonError'
-                "404":
-                    $ref: '#/responses/CommonError'
-            security:
-                - BearerAuth:
-                    - '[]'
-            summary: Returns a news article by its ID.
-            tags:
-                - news
-        put:
-            operationId: updateNews
-            parameters:
-                - description: ID of the news
-                  format: uint64
-                  in: path
-                  name: id
-                  required: true
-                  type: integer
-                  x-go-name: ID
-            responses:
-                "200":
-                    $ref: '#/responses/CommonSuccess'
-                "400":
-                    $ref: '#/responses/CommonError'
-                "500":
-                    $ref: '#/responses/CommonError'
-            security:
-                - BearerAuth:
-                    - '[]'
-            summary: Updates a news article by its ID.
-            tags:
-                - news
-        delete:
-            operationId: deleteNews
-            parameters:
-                - description: ID of the news
-                  format: uint64
-                  in: path
-                  name: id
-                  required: true
-                  type: integer
-                  x-go-name: ID
-            responses:
-                "200":
-                    $ref: '#/responses/CommonSuccess'
-                "400":
-                    $ref: '#/responses/CommonError'
-                "500":
-                    $ref: '#/responses/CommonError'
-            security:
-                - BearerAuth:
-                    - '[]'
-            summary: Deletes a news article by its ID.
-            tags:
-                - news
 responses:
     CommonError:
         description: CommonError represents an error response
         headers:
             message:
-                description: |-
-                    Error message
-                    required: true
+                description: Error message
                 type: string
             status:
-                description: |-
-                    Status of the error
-                    required: true
+                description: Status of the error
                 type: string
     CommonSuccess:
         description: CommonSuccess represents a successful response
         headers:
             message:
-                description: |-
-                    Message detailing the success
-                    required: true
+                description: Message detailing the success
                 type: string
             status:
-                description: |-
-                    Status of the response
-                    required: true
+                description: Status of the response
                 type: string
     StringResponse:
-        description: ""
+        description: JWT token response after successful authentication
         headers:
             token:
                 description: JWT token returned after successful authentication
                 type: string
-swagger: "2.0"
 
 securityDefinitions:
     BearerAuth:

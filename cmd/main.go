@@ -144,13 +144,16 @@ func main() {
 		})
 	})
 
-	// Swagger UI endpoint
 	server.GET("/docs", func(c *gin.Context) {
-		opts := middleware.SwaggerUIOpts{SpecURL: "/swagger.yaml"}
+		opts := middleware.SwaggerUIOpts{
+			SpecURL: "/swagger.yaml",
+			Title:   "Venecraft API Documentation",
+		}
 		sh := middleware.SwaggerUI(opts, nil)
 		sh.ServeHTTP(c.Writer, c.Request)
 	})
 
+	// Serve the Swagger spec
 	server.StaticFile("/swagger.yaml", "./swagger.yaml")
 
 	port := os.Getenv("PORT")

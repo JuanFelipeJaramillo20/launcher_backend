@@ -100,7 +100,7 @@ func (nc *NewsController) CreateNews(c *gin.Context) {
 //
 // Responses:
 //
-//	200: NewsListResponse
+//	200: []News
 //	500: CommonError
 func (nc *NewsController) GetAllNews(c *gin.Context) {
 	news, err := nc.NewsService.GetAllNews()
@@ -119,7 +119,7 @@ func (nc *NewsController) GetAllNews(c *gin.Context) {
 //
 // Responses:
 //
-//   200: NewsListResponse
+//   200: []News
 //   500: CommonError
 
 func (nc *NewsController) GetLatestNews(c *gin.Context) {
@@ -139,7 +139,7 @@ func (nc *NewsController) GetLatestNews(c *gin.Context) {
 //
 // Responses:
 //
-//	200: NewsResponse
+//	200: News
 //	400: CommonError
 //	404: CommonError
 //	500: CommonError
@@ -172,7 +172,7 @@ func (nc *NewsController) GetNewsByID(c *gin.Context) {
 //
 // Responses:
 //
-//	200: NewsResponse
+//	200: CommonSuccess
 //	400: CommonError
 //	403: CommonError
 //	500: CommonError
