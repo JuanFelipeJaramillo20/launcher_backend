@@ -92,7 +92,13 @@ func (s *userService) UpdateUser(user *entity.User) error {
 }
 
 func (s *userService) DeleteUser(id uint64) error {
-	return s.userRepo.DeleteUser(id)
+	user, err := s.userRepo.GetUserByID(id)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	user.IsActive = false
+	return s.userRepo.UpdateUser(user)
 }
 
 func (s *userService) RequestPasswordReset(email string) error {
