@@ -17,6 +17,7 @@ type UserRepository interface {
 	GetUsersByRole(role string) ([]entity.User, error)
 	GetUserByResetToken(resetToken string) (*entity.User, error)
 	HasRole(id uint64, role string) bool
+	CountActiveUsers() (int, error)
 }
 
 type userRepository struct {
@@ -103,4 +104,10 @@ func (r *userRepository) HasRole(userID uint64, roleName string) bool {
 	}
 
 	return count > 0
+}
+
+func (r *userRepository) CountActiveUsers() (int, error) {
+	var count int64
+	err := r.db.Model(&entity.User{}).Where("is_active = ?", true).Count(&count).Error
+	return int(count), err
 }

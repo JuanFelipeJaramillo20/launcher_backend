@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 	"venecraft-back/cmd/dto"
