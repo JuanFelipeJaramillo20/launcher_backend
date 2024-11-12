@@ -98,18 +98,21 @@ func main() {
 	userRoleRepo := repository.NewUserRoleRepository(DB)
 	registerRepo := repository.NewRegisterRepository(DB)
 	newsRepo := repository.NewNewsRepository(DB)
+	logrepo := repository.NewLogRepository(DB)
 
 	// Initialize services
 	userService := service.NewUserService(userRepo, roleRepo)
 	authService := service.NewAuthService(userRepo)
 	registerService := service.NewRegisterService(registerRepo, userRepo, roleRepo, userRoleRepo)
 	newsService := service.NewNewsService(newsRepo)
+	statsService := service.NewServerStatsService(userRepo, logrepo)
 
 	// Initialize controllers
 	userController := controller.NewUserController(userService)
 	authController := controller.NewAuthController(authService)
 	registerController := controller.NewRegisterController(registerService)
 	newsController := controller.NewNewsController(newsService)
+	statsController := controller.NewServerStatsController(statsService)
 
 	server := gin.Default()
 
@@ -135,6 +138,7 @@ func main() {
 		protected.GET("/register", registerController.GetAllRegisters)
 		routes.UserRoutes(protected, userController)
 		routes.NewsRoutes(protected, newsController)
+		routes.ServerStatsRoutes(protected, statsController)
 	}
 
 	// Health check route
