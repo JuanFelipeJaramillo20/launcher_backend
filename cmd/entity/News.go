@@ -23,4 +23,8 @@ type News struct {
 	// Creation timestamp
 	// required: true
 	CreatedAt time.Time `json:"created_at" gorm:"default:CURRENT_TIMESTAMP"`
+
+	// Image url for the new
+	// required: true
+	ImageURL string `json:"image_url" gorm:"type:varchar(255)"`
 }

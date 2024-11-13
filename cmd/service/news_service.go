@@ -26,7 +26,7 @@ func NewNewsService(newsRepo repository.NewsRepository) NewsService {
 
 func (s *newsService) CreateNews(news *entity.News) error {
 	if news.Title == "" || news.Content == "" {
-		return errors.New("the tittle and content must be provided")
+		return errors.New("the title and content must be provided")
 	}
 	return s.newsRepo.CreateNews(news)
 }

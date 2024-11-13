@@ -1,12 +1,15 @@
 package controller
 
 import (
+	"log"
+	"mime/multipart"
 	"net/http"
 	"slices"
 	"strconv"
 	"venecraft-back/cmd/entity"
 	"venecraft-back/cmd/middlewares"
 	"venecraft-back/cmd/service"
+	"venecraft-back/cmd/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,6 +29,10 @@ type CreateNewsRequest struct {
 	// User ID
 	// required: true
 	CreatedBy uint64 `json:"created_by"`
+
+	// Image for the news article
+	// required: true
+	Image *multipart.FileHeader `form:"image"`
 }
 
 // Parameters for creating a news
@@ -73,22 +80,59 @@ func (nc *NewsController) CreateNews(c *gin.Context) {
 		return
 	}
 
-	var request CreateNewsRequest
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+	// Retrieve other form data manually
+	title := c.PostForm("title")
+	content := c.PostForm("content")
+	createdByStr := c.PostForm("created_by")
+
+	// Parse `created_by` as an integer
+	createdBy, err := strconv.ParseUint(createdByStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid created_by field"})
 		return
 	}
 
-	news := entity.News{
-		Title:     request.Title,
-		Content:   request.Content,
-		CreatedBy: request.CreatedBy,
+	// Retrieve the image file
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Image file is required"})
+		return
 	}
 
+	// Open the file to upload it to S3
+	fileContent, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to open image file"})
+		return
+	}
+	defer fileContent.Close()
+
+	// Upload the image to S3
+	imageURL, err := utils.UploadFileToS3(fileContent, file.Filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload image"})
+		return
+	}
+
+	// Create the news entity with the image URL
+	news := entity.News{
+		Title:     title,
+		Content:   content,
+		CreatedBy: createdBy,
+		ImageURL:  imageURL, // Assuming `ImageURL` is added to the News struct
+	}
+
+	// Attempt to create the news entry in the database
 	if err := nc.NewsService.CreateNews(&news); err != nil {
+		// If there is an error, delete the uploaded file from S3
+		deleteErr := utils.DeleteFileFromS3(file.Filename)
+		if deleteErr != nil {
+			log.Printf("Failed to delete file from S3 after error: %v", deleteErr)
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusCreated, news)
 }
 
