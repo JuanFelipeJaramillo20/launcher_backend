@@ -16,7 +16,10 @@ package main
 // swagger:meta
 
 import (
+	"context"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"log"
 	"os"
 	"time"
@@ -27,6 +30,7 @@ import (
 	"venecraft-back/cmd/routes"
 	"venecraft-back/cmd/seeds"
 	"venecraft-back/cmd/service"
+	"venecraft-back/cmd/utils"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -54,6 +58,22 @@ func init() {
 			log.Println("No .env.production file found. Ensure you have set the environment variables.")
 		}
 	}
+
+	// Initialize AWS S3
+	awsRegion := os.Getenv("AWS_REGION")
+	bucketName := os.Getenv("S3_BUCKET_NAME")
+	if bucketName == "" || awsRegion == "" {
+		log.Fatal("AWS_REGION and S3_BUCKET_NAME environment variables are required")
+	}
+
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
+	if err != nil {
+		log.Fatalf("Unable to load AWS SDK config, %v", err)
+	}
+
+	s3Client := s3.NewFromConfig(cfg)
+	utils.InitializeS3(s3Client, bucketName) // Pass s3Client and bucketName to utils
+	log.Println("S3 client initialized successfully")
 }
 
 func connectDatabase() {
