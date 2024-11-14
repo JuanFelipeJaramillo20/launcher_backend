@@ -16,6 +16,10 @@ type Log struct {
 	// required: true
 	Action string `gorm:"type:varchar(255)"`
 
+	// Description of the action performed
+	// required: true
+	Description string `gorm:"type:varchar(255)"`
+
 	// Timestamp of the log entry
 	// required: true
 	Timestamp time.Time `gorm:"default:CURRENT_TIMESTAMP"`

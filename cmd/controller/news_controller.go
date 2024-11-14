@@ -105,7 +105,12 @@ func (nc *NewsController) CreateNews(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to open image file"})
 		return
 	}
-	defer fileContent.Close()
+	defer func(fileContent multipart.File) {
+		err := fileContent.Close()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Unable to close image file"})
+		}
+	}(fileContent)
 
 	// Upload the image to S3
 	imageURL, err := utils.UploadFileToS3(fileContent, file.Filename)
@@ -266,4 +271,42 @@ func (nc *NewsController) DeleteNews(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "News deleted successfully"})
+}
+
+// swagger:route POST /api/news/{id}/like news likeNews
+// Likes or unlikes a news post by ID.
+//
+// Security:
+//   - BearerAuth: []
+//
+// Responses:
+//
+//	200: CommonSuccess
+//	400: CommonError
+//	500: CommonError
+func (nc *NewsController) ToggleLikeNews(c *gin.Context) {
+	userID, roles, authenticated := middlewares.GetLoggedInUser(c)
+	if !authenticated || (!slices.Contains(roles, "ADMIN") && !slices.Contains(roles, "PLAYER")) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User access required"})
+		return
+	}
+
+	newsIDStr := c.Param("id")
+	newsID, err := strconv.ParseUint(newsIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid news ID"})
+		return
+	}
+
+	liked, err := nc.NewsService.ToggleLikeNews(userID, newsID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	message := "News unliked successfully"
+	if liked {
+		message = "News liked successfully"
+	}
+	c.JSON(http.StatusOK, gin.H{"message": message, "liked": liked})
 }

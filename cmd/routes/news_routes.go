@@ -15,5 +15,6 @@ func NewsRoutes(router *gin.RouterGroup, newsController *controller.NewsControll
 		newsGroup.GET("/:id", newsController.GetNewsByID)
 		newsGroup.PUT("/:id", newsController.UpdateNews)
 		newsGroup.DELETE("/:id", newsController.DeleteNews)
+		newsGroup.POST("/:id/like", newsController.ToggleLikeNews)
 	}
 }

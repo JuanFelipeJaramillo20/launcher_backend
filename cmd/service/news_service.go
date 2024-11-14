@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"time"
 	"venecraft-back/cmd/entity"
 	"venecraft-back/cmd/repository"
 )
@@ -14,14 +15,17 @@ type NewsService interface {
 	GetNewsByID(id uint64) (*entity.News, error)
 	UpdateNews(news *entity.News) error
 	DeleteNews(id uint64) error
+	ToggleLikeNews(userID, newsID uint64) (bool, error)
 }
 
 type newsService struct {
 	newsRepo repository.NewsRepository
+	likeRepo repository.LikeRepository
+	logRepo  repository.LogRepository
 }
 
-func NewNewsService(newsRepo repository.NewsRepository) NewsService {
-	return &newsService{newsRepo}
+func NewNewsService(newsRepo repository.NewsRepository, likeRepo repository.LikeRepository, logRepo repository.LogRepository) NewsService {
+	return &newsService{newsRepo, likeRepo, logRepo}
 }
 
 func (s *newsService) CreateNews(news *entity.News) error {
@@ -58,4 +62,51 @@ func (s *newsService) UpdateNews(news *entity.News) error {
 
 func (s *newsService) DeleteNews(id uint64) error {
 	return s.newsRepo.DeleteNews(id)
+}
+
+func (s *newsService) ToggleLikeNews(userID, newsID uint64) (bool, error) {
+	liked, err := s.likeRepo.HasUserLikedNews(userID, newsID)
+	if err != nil {
+		return false, err
+	}
+
+	if liked {
+		err := s.likeRepo.DeleteLike(userID, newsID)
+		if err != nil {
+			return false, err
+		}
+
+		logEntry := entity.Log{
+			UserID:      userID,
+			Action:      "unlike",
+			Description: fmt.Sprintf("User with id: %d unliked the news post with id: %d", userID, newsID),
+			Timestamp:   time.Now(),
+		}
+		if logErr := s.logRepo.CreateLog(&logEntry); logErr != nil {
+			return false, logErr
+		}
+
+		return false, nil
+	}
+
+	like := entity.Like{
+		UserID:    userID,
+		NewsID:    newsID,
+		Timestamp: time.Now(),
+	}
+	if err := s.likeRepo.CreateLike(&like); err != nil {
+		return false, err
+	}
+
+	logEntry := entity.Log{
+		UserID:      userID,
+		Action:      "like",
+		Description: fmt.Sprintf("User with id: %d liked the news post with id: %d", userID, newsID),
+		Timestamp:   time.Now(),
+	}
+	if logErr := s.logRepo.CreateLog(&logEntry); logErr != nil {
+		return false, logErr
+	}
+
+	return true, nil
 }
