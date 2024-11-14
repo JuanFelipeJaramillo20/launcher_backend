@@ -152,32 +152,43 @@ func (nc *NewsController) CreateNews(c *gin.Context) {
 //	200: []News
 //	500: CommonError
 func (nc *NewsController) GetAllNews(c *gin.Context) {
-	news, err := nc.NewsService.GetAllNews()
+	userID, _, authenticated := middlewares.GetLoggedInUser(c)
+	if !authenticated {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	newsList, err := nc.NewsService.GetAllNews(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, news)
+	c.JSON(http.StatusOK, newsList)
 }
 
 // swagger:route GET /api/news/latest news getLatestNews
 // Returns the latest news articles.
 //
-//Security:
+// Security:
 //   - BearerAuth: []
 //
 // Responses:
 //
-//   200: []News
-//   500: CommonError
-
+//	200: []News
+//	500: CommonError
 func (nc *NewsController) GetLatestNews(c *gin.Context) {
-	news, err := nc.NewsService.GetLatestNews()
+	userID, _, authenticated := middlewares.GetLoggedInUser(c)
+	if !authenticated {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	newsList, err := nc.NewsService.GetLatestNews(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, news)
+	c.JSON(http.StatusOK, newsList)
 }
 
 // swagger:route GET /api/news/{id} news getNewsByID
@@ -193,13 +204,19 @@ func (nc *NewsController) GetLatestNews(c *gin.Context) {
 //	404: CommonError
 //	500: CommonError
 func (nc *NewsController) GetNewsByID(c *gin.Context) {
+	userID, _, authenticated := middlewares.GetLoggedInUser(c)
+	if !authenticated {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid news ID"})
 		return
 	}
 
-	news, err := nc.NewsService.GetNewsByID(id)
+	news, err := nc.NewsService.GetNewsByID(userID, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

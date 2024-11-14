@@ -10,9 +10,9 @@ import (
 
 type NewsService interface {
 	CreateNews(news *entity.News) error
-	GetAllNews() ([]entity.News, error)
-	GetLatestNews() ([]entity.News, error)
-	GetNewsByID(id uint64) (*entity.News, error)
+	GetAllNews(userID uint64) ([]map[string]interface{}, error)
+	GetLatestNews(userID uint64) ([]map[string]interface{}, error)
+	GetNewsByID(userID uint64, id uint64) (map[string]interface{}, error)
 	UpdateNews(news *entity.News) error
 	DeleteNews(id uint64) error
 	ToggleLikeNews(userID, newsID uint64) (bool, error)
@@ -35,23 +35,104 @@ func (s *newsService) CreateNews(news *entity.News) error {
 	return s.newsRepo.CreateNews(news)
 }
 
-func (s *newsService) GetAllNews() ([]entity.News, error) {
-	return s.newsRepo.GetAllNews()
+func (s *newsService) GetAllNews(userID uint64) ([]map[string]interface{}, error) {
+	newsList, err := s.newsRepo.GetAllNews()
+	if err != nil {
+		return nil, err
+	}
+
+	var response []map[string]interface{}
+	for _, news := range newsList {
+		likeCount, err := s.newsRepo.GetLikeCountForNews(news.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		userLiked, err := s.likeRepo.HasUserLikedNews(userID, news.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		newsData := map[string]interface{}{
+			"id":         news.ID,
+			"title":      news.Title,
+			"content":    news.Content,
+			"created_by": news.CreatedBy,
+			"created_at": news.CreatedAt,
+			"like_count": likeCount,
+			"user_liked": userLiked,
+		}
+
+		response = append(response, newsData)
+	}
+
+	return response, nil
 }
 
-func (s *newsService) GetLatestNews() ([]entity.News, error) {
-	return s.newsRepo.GetLatestNews()
+func (s *newsService) GetLatestNews(userID uint64) ([]map[string]interface{}, error) {
+	newsList, err := s.newsRepo.GetLatestNews()
+	if err != nil {
+		return nil, err
+	}
+
+	var response []map[string]interface{}
+	for _, news := range newsList {
+		likeCount, err := s.newsRepo.GetLikeCountForNews(news.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		userLiked, err := s.likeRepo.HasUserLikedNews(userID, news.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		newsData := map[string]interface{}{
+			"id":         news.ID,
+			"title":      news.Title,
+			"content":    news.Content,
+			"created_by": news.CreatedBy,
+			"created_at": news.CreatedAt,
+			"like_count": likeCount,
+			"user_liked": userLiked,
+		}
+
+		response = append(response, newsData)
+	}
+
+	return response, nil
 }
 
-func (s *newsService) GetNewsByID(id uint64) (*entity.News, error) {
-	news, err := s.newsRepo.GetNewsByID(id)
+func (s *newsService) GetNewsByID(userID, newsID uint64) (map[string]interface{}, error) {
+	news, err := s.newsRepo.GetNewsByID(newsID)
 	if err != nil {
 		return nil, err
 	}
 	if news == nil {
 		return nil, errors.New("news not found")
 	}
-	return news, nil
+
+	likeCount, err := s.newsRepo.GetLikeCountForNews(news.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	userLiked, err := s.likeRepo.HasUserLikedNews(userID, news.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	newsData := map[string]interface{}{
+		"id":         news.ID,
+		"title":      news.Title,
+		"content":    news.Content,
+		"created_by": news.CreatedBy,
+		"created_at": news.CreatedAt,
+		"like_count": likeCount,
+		"user_liked": userLiked,
+	}
+
+	return newsData, nil
 }
 
 func (s *newsService) UpdateNews(news *entity.News) error {
