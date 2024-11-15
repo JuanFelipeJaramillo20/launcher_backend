@@ -15,17 +15,17 @@ type NewsService interface {
 	GetNewsByID(userID uint64, id uint64) (map[string]interface{}, error)
 	UpdateNews(news *entity.News) error
 	DeleteNews(id uint64) error
-	ToggleLikeNews(userID, newsID uint64) (bool, error)
+	ToggleReactionNews(userID, newsID uint64, reactionType string) (bool, error)
 }
 
 type newsService struct {
-	newsRepo repository.NewsRepository
-	likeRepo repository.LikeRepository
-	logRepo  repository.LogRepository
+	newsRepo     repository.NewsRepository
+	reactionRepo repository.ReactionRepository
+	logRepo      repository.LogRepository
 }
 
-func NewNewsService(newsRepo repository.NewsRepository, likeRepo repository.LikeRepository, logRepo repository.LogRepository) NewsService {
-	return &newsService{newsRepo, likeRepo, logRepo}
+func NewNewsService(newsRepo repository.NewsRepository, reactionRepo repository.ReactionRepository, logRepo repository.LogRepository) NewsService {
+	return &newsService{newsRepo, reactionRepo, logRepo}
 }
 
 func (s *newsService) CreateNews(news *entity.News) error {
@@ -43,24 +43,36 @@ func (s *newsService) GetAllNews(userID uint64) ([]map[string]interface{}, error
 
 	var response []map[string]interface{}
 	for _, news := range newsList {
-		likeCount, err := s.newsRepo.GetLikeCountForNews(news.ID)
+		likeCount, err := s.reactionRepo.GetReactionCountForNews(news.ID, "like")
 		if err != nil {
 			return nil, err
 		}
 
-		userLiked, err := s.likeRepo.HasUserLikedNews(userID, news.ID)
+		dislikeCount, err := s.reactionRepo.GetReactionCountForNews(news.ID, "dislike")
+		if err != nil {
+			return nil, err
+		}
+
+		userLiked, err := s.reactionRepo.HasUserReacted(userID, news.ID, "like")
+		if err != nil {
+			return nil, err
+		}
+
+		userDisliked, err := s.reactionRepo.HasUserReacted(userID, news.ID, "dislike")
 		if err != nil {
 			return nil, err
 		}
 
 		newsData := map[string]interface{}{
-			"id":         news.ID,
-			"title":      news.Title,
-			"content":    news.Content,
-			"created_by": news.CreatedBy,
-			"created_at": news.CreatedAt,
-			"like_count": likeCount,
-			"user_liked": userLiked,
+			"id":            news.ID,
+			"title":         news.Title,
+			"content":       news.Content,
+			"created_by":    news.CreatedBy,
+			"created_at":    news.CreatedAt,
+			"like_count":    likeCount,
+			"dislike_count": dislikeCount,
+			"user_liked":    userLiked,
+			"user_disliked": userDisliked,
 		}
 
 		response = append(response, newsData)
@@ -77,24 +89,36 @@ func (s *newsService) GetLatestNews(userID uint64) ([]map[string]interface{}, er
 
 	var response []map[string]interface{}
 	for _, news := range newsList {
-		likeCount, err := s.newsRepo.GetLikeCountForNews(news.ID)
+		likeCount, err := s.reactionRepo.GetReactionCountForNews(news.ID, "like")
 		if err != nil {
 			return nil, err
 		}
 
-		userLiked, err := s.likeRepo.HasUserLikedNews(userID, news.ID)
+		dislikeCount, err := s.reactionRepo.GetReactionCountForNews(news.ID, "dislike")
+		if err != nil {
+			return nil, err
+		}
+
+		userLiked, err := s.reactionRepo.HasUserReacted(userID, news.ID, "like")
+		if err != nil {
+			return nil, err
+		}
+
+		userDisliked, err := s.reactionRepo.HasUserReacted(userID, news.ID, "dislike")
 		if err != nil {
 			return nil, err
 		}
 
 		newsData := map[string]interface{}{
-			"id":         news.ID,
-			"title":      news.Title,
-			"content":    news.Content,
-			"created_by": news.CreatedBy,
-			"created_at": news.CreatedAt,
-			"like_count": likeCount,
-			"user_liked": userLiked,
+			"id":            news.ID,
+			"title":         news.Title,
+			"content":       news.Content,
+			"created_by":    news.CreatedBy,
+			"created_at":    news.CreatedAt,
+			"like_count":    likeCount,
+			"dislike_count": dislikeCount,
+			"user_liked":    userLiked,
+			"user_disliked": userDisliked,
 		}
 
 		response = append(response, newsData)
@@ -112,24 +136,36 @@ func (s *newsService) GetNewsByID(userID, newsID uint64) (map[string]interface{}
 		return nil, errors.New("news not found")
 	}
 
-	likeCount, err := s.newsRepo.GetLikeCountForNews(news.ID)
+	likeCount, err := s.reactionRepo.GetReactionCountForNews(news.ID, "like")
 	if err != nil {
 		return nil, err
 	}
 
-	userLiked, err := s.likeRepo.HasUserLikedNews(userID, news.ID)
+	dislikeCount, err := s.reactionRepo.GetReactionCountForNews(news.ID, "dislike")
+	if err != nil {
+		return nil, err
+	}
+
+	userLiked, err := s.reactionRepo.HasUserReacted(userID, news.ID, "like")
+	if err != nil {
+		return nil, err
+	}
+
+	userDisliked, err := s.reactionRepo.HasUserReacted(userID, news.ID, "dislike")
 	if err != nil {
 		return nil, err
 	}
 
 	newsData := map[string]interface{}{
-		"id":         news.ID,
-		"title":      news.Title,
-		"content":    news.Content,
-		"created_by": news.CreatedBy,
-		"created_at": news.CreatedAt,
-		"like_count": likeCount,
-		"user_liked": userLiked,
+		"id":            news.ID,
+		"title":         news.Title,
+		"content":       news.Content,
+		"created_by":    news.CreatedBy,
+		"created_at":    news.CreatedAt,
+		"like_count":    likeCount,
+		"dislike_count": dislikeCount,
+		"user_liked":    userLiked,
+		"user_disliked": userDisliked,
 	}
 
 	return newsData, nil
@@ -145,22 +181,22 @@ func (s *newsService) DeleteNews(id uint64) error {
 	return s.newsRepo.DeleteNews(id)
 }
 
-func (s *newsService) ToggleLikeNews(userID, newsID uint64) (bool, error) {
-	liked, err := s.likeRepo.HasUserLikedNews(userID, newsID)
+func (s *newsService) ToggleReactionNews(userID, newsID uint64, reactionType string) (bool, error) {
+	reacted, err := s.reactionRepo.HasUserReacted(userID, newsID, reactionType)
 	if err != nil {
 		return false, err
 	}
 
-	if liked {
-		err := s.likeRepo.DeleteLike(userID, newsID)
+	if reacted {
+		err := s.reactionRepo.DeleteReaction(userID, newsID, reactionType)
 		if err != nil {
 			return false, err
 		}
 
 		logEntry := entity.Log{
 			UserID:      userID,
-			Action:      "unlike",
-			Description: fmt.Sprintf("User with id: %d unliked the news post with id: %d", userID, newsID),
+			Action:      "un" + reactionType,
+			Description: fmt.Sprintf("User with id: %d un%sd the news post with id: %d", userID, reactionType, newsID),
 			Timestamp:   time.Now(),
 		}
 		if logErr := s.logRepo.CreateLog(&logEntry); logErr != nil {
@@ -170,19 +206,20 @@ func (s *newsService) ToggleLikeNews(userID, newsID uint64) (bool, error) {
 		return false, nil
 	}
 
-	like := entity.Like{
+	reaction := entity.Reaction{
 		UserID:    userID,
 		NewsID:    newsID,
+		Type:      reactionType,
 		Timestamp: time.Now(),
 	}
-	if err := s.likeRepo.CreateLike(&like); err != nil {
+	if err := s.reactionRepo.CreateReaction(&reaction); err != nil {
 		return false, err
 	}
 
 	logEntry := entity.Log{
 		UserID:      userID,
-		Action:      "like",
-		Description: fmt.Sprintf("User with id: %d liked the news post with id: %d", userID, newsID),
+		Action:      reactionType,
+		Description: fmt.Sprintf("User with id: %d %sd the news post with id: %d", userID, reactionType, newsID),
 		Timestamp:   time.Now(),
 	}
 	if logErr := s.logRepo.CreateLog(&logEntry); logErr != nil {

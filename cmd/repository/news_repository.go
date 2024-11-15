@@ -15,7 +15,6 @@ type NewsRepository interface {
 	GetLatestNews() ([]entity.News, error)
 	UpdateNews(news *entity.News) error
 	DeleteNews(id uint64) error
-	GetLikeCountForNews(newsID uint64) (int64, error)
 }
 
 type newsRepository struct {
@@ -69,12 +68,4 @@ func (r *newsRepository) DeleteNews(id uint64) error {
 		return err
 	}
 	return nil
-}
-
-func (r *newsRepository) GetLikeCountForNews(newsID uint64) (int64, error) {
-	var count int64
-	if err := r.db.Model(&entity.Like{}).Where("news_id = ?", newsID).Count(&count).Error; err != nil {
-		return 0, err
-	}
-	return count, nil
 }

@@ -290,8 +290,8 @@ func (nc *NewsController) DeleteNews(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "News deleted successfully"})
 }
 
-// swagger:route POST /api/news/{id}/like news likeNews
-// Likes or unlikes a news post by ID.
+// swagger:route POST /api/news/{id}/reaction/{reactionType} news likeNews
+// Likes or dislikes a news post by ID.
 //
 // Security:
 //   - BearerAuth: []
@@ -301,29 +301,36 @@ func (nc *NewsController) DeleteNews(c *gin.Context) {
 //	200: CommonSuccess
 //	400: CommonError
 //	500: CommonError
-func (nc *NewsController) ToggleLikeNews(c *gin.Context) {
-	userID, roles, authenticated := middlewares.GetLoggedInUser(c)
-	if !authenticated || (!slices.Contains(roles, "ADMIN") && !slices.Contains(roles, "PLAYER")) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "User access required"})
+func (nc *NewsController) ToggleReaction(c *gin.Context) {
+	userID, _, authenticated := middlewares.GetLoggedInUser(c)
+	if !authenticated {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	newsIDStr := c.Param("id")
-	newsID, err := strconv.ParseUint(newsIDStr, 10, 64)
+	newsID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid news ID"})
 		return
 	}
 
-	liked, err := nc.NewsService.ToggleLikeNews(userID, newsID)
+	reactionType := c.Param("reactionType")
+	if reactionType != "like" && reactionType != "dislike" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reaction type"})
+		return
+	}
+
+	// Toggle the reaction
+	reacted, err := nc.NewsService.ToggleReactionNews(userID, newsID, reactionType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	message := "News unliked successfully"
-	if liked {
-		message = "News liked successfully"
+	// Respond with the result of the toggle action
+	message := "News post reacted with " + reactionType
+	if !reacted {
+		message = "News post un-reacted " + reactionType
 	}
-	c.JSON(http.StatusOK, gin.H{"message": message, "liked": liked})
+	c.JSON(http.StatusOK, gin.H{"message": message})
 }

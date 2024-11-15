@@ -98,7 +98,7 @@ func connectDatabase() {
 	err = DB.AutoMigrate(&entity.Register{}, &entity.User{}, &entity.Role{}, &entity.Permission{},
 		&entity.RolePermission{}, &entity.UserRole{}, &entity.Server{},
 		&entity.Player{}, &entity.Ban{}, &entity.Log{}, &entity.Setting{},
-		&entity.UserSetting{}, &entity.News{}, &entity.Like{})
+		&entity.UserSetting{}, &entity.News{}, &entity.Reaction{})
 	if err != nil {
 		log.Fatal("Failed to migrate the database: ", err)
 	}
@@ -119,13 +119,13 @@ func main() {
 	registerRepo := repository.NewRegisterRepository(DB)
 	newsRepo := repository.NewNewsRepository(DB)
 	logrepo := repository.NewLogRepository(DB)
-	likeRepo := repository.NewLikeRepository(DB)
+	reactionRepo := repository.NewReactionRepository(DB)
 
 	// Initialize services
 	userService := service.NewUserService(userRepo, roleRepo)
 	authService := service.NewAuthService(userRepo)
 	registerService := service.NewRegisterService(registerRepo, userRepo, roleRepo, userRoleRepo)
-	newsService := service.NewNewsService(newsRepo, likeRepo, logrepo)
+	newsService := service.NewNewsService(newsRepo, reactionRepo, logrepo)
 	statsService := service.NewServerStatsService(userRepo, logrepo)
 
 	// Initialize controllers
