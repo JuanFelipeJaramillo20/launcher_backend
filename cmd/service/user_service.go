@@ -16,7 +16,7 @@ type UserService interface {
 	CreateUser(user *entity.User, roleName string) error
 	GetAllUsers() ([]entity.User, error)
 	GetUserByID(id uint64) (*entity.User, error)
-	UpdateUser(user *entity.User) error
+	UpdateUser(id uint64, user *entity.User) error
 	DeleteUser(id uint64) error
 	RequestPasswordReset(email string) error
 	ResetPassword(token string, newPassword string) error
@@ -87,8 +87,44 @@ func (s *userService) GetUserByID(id uint64) (*entity.User, error) {
 	return user, nil
 }
 
-func (s *userService) UpdateUser(user *entity.User) error {
-	return s.userRepo.UpdateUser(user)
+func (s *userService) UpdateUser(userID uint64, userUpdate *entity.User) error {
+	// Fetch the existing user from the database
+	existingUser, err := s.userRepo.GetUserByID(userID)
+	if err != nil {
+		return err
+	}
+	if existingUser == nil {
+		return errors.New("user not found")
+	}
+
+	if userUpdate.FullName != "" {
+		existingUser.FullName = userUpdate.FullName
+	}
+	if userUpdate.Email != "" {
+		existingUser.Email = userUpdate.Email
+	}
+	if userUpdate.Nickname != "" {
+		existingUser.Nickname = userUpdate.Nickname
+	}
+	if userUpdate.Password != "" {
+		hashedPassword, err := hashPassword(userUpdate.Password)
+		if err != nil {
+			return errors.New("failed to hash password")
+		}
+		existingUser.Password = hashedPassword
+	}
+	if userUpdate.RecoverPasswordToken != "" {
+		existingUser.RecoverPasswordToken = userUpdate.RecoverPasswordToken
+	}
+	if !userUpdate.RecoverPasswordTokenExpires.IsZero() {
+		existingUser.RecoverPasswordTokenExpires = userUpdate.RecoverPasswordTokenExpires
+	}
+	if userUpdate.Roles != nil {
+		existingUser.Roles = userUpdate.Roles
+	}
+	existingUser.IsActive = userUpdate.IsActive
+
+	return s.userRepo.UpdateUser(existingUser)
 }
 
 func (s *userService) DeleteUser(id uint64) error {

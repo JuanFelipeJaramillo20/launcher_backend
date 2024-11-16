@@ -202,13 +202,19 @@ func (uc *UserController) GetUserByID(c *gin.Context) {
 //	400: CommonError
 //	500: CommonError
 func (uc *UserController) UpdateUser(c *gin.Context) {
-	var user entity.User
-	if err := c.ShouldBindJSON(&user); err != nil {
+	userID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var userUpdate entity.User
+	if err := c.ShouldBindJSON(&userUpdate); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	err := uc.UserService.UpdateUser(&user)
+	err = uc.UserService.UpdateUser(userID, &userUpdate)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
