@@ -31,12 +31,11 @@ func (e *EmailClient) SendEmail(params *resend.SendEmailRequest) (*resend.SendEm
 	return e.client.Emails.Send(params)
 }
 
-func (e *EmailClient) SendPasswordResetEmail(nickName string, email string, resetLink string) error {
+func (e *EmailClient) SendPasswordResetEmail(nickName string, email string, token string) error {
 	requestDate := time.Now().Format("January 2, 2006 at 3:04 PM")
-	fmt.Println("rendering in email: ", resetLink, nickName, email)
 	body, err := RenderTemplate("password_reset/password_reset.html", map[string]string{
 		"Username":    nickName,
-		"ResetLink":   resetLink,
+		"Token":       token,
 		"RequestDate": requestDate,
 	})
 	if err != nil {

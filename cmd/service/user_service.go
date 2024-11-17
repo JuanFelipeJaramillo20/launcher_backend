@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
-	"os"
 	"time"
 	"venecraft-back/cmd/email"
 	"venecraft-back/cmd/entity"
@@ -154,9 +153,7 @@ func (s *userService) RequestPasswordReset(email string) error {
 		return fmt.Errorf("failed to save reset token: %v", err)
 	}
 
-	host := os.Getenv("FRONTEND_ADDRESS")
-	resetLink := fmt.Sprintf("%sreset-password?token=%s", host, token)
-	return s.emailClient.SendPasswordResetEmail(user.Nickname, user.Email, resetLink)
+	return s.emailClient.SendPasswordResetEmail(user.Nickname, user.Email, token)
 }
 
 func (s *userService) ResetPassword(token, newPassword string) error {
