@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"slices"
@@ -268,6 +269,7 @@ func (uc *UserController) PasswordResetRequest(c *gin.Context) {
 	err := uc.UserService.RequestPasswordReset(req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to initiate password reset"})
+		fmt.Print(err)
 		return
 	}
 
