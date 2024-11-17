@@ -24,7 +24,7 @@ func NewAuthService(userRepo repository.UserRepository) AuthService {
 var jwtKey = []byte("secret_key_not_secure_at_all")
 
 func (s *authService) Login(email, password string) (string, error) {
-	user, err := s.userRepo.GetUserByEmail(email)
+	user, err := s.userRepo.GetUserByEmail(email, true)
 	if err != nil {
 		return "", errors.New("invalid email or password")
 	}

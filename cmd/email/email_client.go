@@ -5,6 +5,7 @@ import (
 	"github.com/resend/resend-go/v2"
 	"os"
 	"sync"
+	"time"
 )
 
 type EmailClient struct {
@@ -30,8 +31,14 @@ func (e *EmailClient) SendEmail(params *resend.SendEmailRequest) (*resend.SendEm
 	return e.client.Emails.Send(params)
 }
 
-func (e *EmailClient) SendPasswordResetEmail(email string, resetLink string) error {
-	body, err := RenderTemplate("password_reset/password_reset.html", map[string]string{"ResetLink": resetLink})
+func (e *EmailClient) SendPasswordResetEmail(nickName string, email string, resetLink string) error {
+	requestDate := time.Now().Format("January 2, 2006 at 3:04 PM")
+	fmt.Println("rendering in email: ", resetLink, nickName, email)
+	body, err := RenderTemplate("password_reset/password_reset.html", map[string]string{
+		"Username":    nickName,
+		"ResetLink":   resetLink,
+		"RequestDate": requestDate,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to render reset email template: %v", err)
 	}
@@ -40,7 +47,7 @@ func (e *EmailClient) SendPasswordResetEmail(email string, resetLink string) err
 		From:    "Support <support@jjar.lat>",
 		To:      []string{email},
 		Html:    body,
-		Subject: "Password Reset Request",
+		Subject: fmt.Sprintf("Password Reset Request - %s", time.Now().Format("Jan 2, 2006 3:04 PM")),
 	}
 
 	_, err = e.client.Emails.Send(params)

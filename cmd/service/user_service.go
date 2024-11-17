@@ -44,7 +44,7 @@ func (s *userService) CreateUser(user *entity.User, roleName string) error {
 		return err
 	}
 
-	if existingUser, _ := s.userRepo.GetUserByEmail(user.Email); existingUser != nil {
+	if existingUser, _ := s.userRepo.GetUserByEmail(user.Email, false); existingUser != nil {
 		return errors.New("user with this email already exists")
 	}
 	if existingUser, _ := s.userRepo.GetUserByNickname(user.Nickname); existingUser != nil {
@@ -138,7 +138,7 @@ func (s *userService) DeleteUser(id uint64) error {
 }
 
 func (s *userService) RequestPasswordReset(email string) error {
-	user, err := s.userRepo.GetUserByEmail(email)
+	user, err := s.userRepo.GetUserByEmail(email, false)
 	if err != nil {
 		return errors.New("user not found")
 	}
@@ -156,7 +156,7 @@ func (s *userService) RequestPasswordReset(email string) error {
 
 	host := os.Getenv("FRONTEND_ADDRESS")
 	resetLink := fmt.Sprintf("%sreset-password?token=%s", host, token)
-	return s.emailClient.SendPasswordResetEmail(user.Email, resetLink)
+	return s.emailClient.SendPasswordResetEmail(user.Nickname, user.Email, resetLink)
 }
 
 func (s *userService) ResetPassword(token, newPassword string) error {

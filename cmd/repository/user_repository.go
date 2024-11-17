@@ -12,7 +12,7 @@ type UserRepository interface {
 	GetUserByID(id uint64) (*entity.User, error)
 	UpdateUser(user *entity.User) error
 	DeleteUser(id uint64) error
-	GetUserByEmail(email string) (*entity.User, error)
+	GetUserByEmail(email string, preloadRoles bool) (*entity.User, error)
 	GetUserByNickname(nickname string) (*entity.User, error)
 	GetUsersByRole(role string) ([]entity.User, error)
 	GetUserByResetToken(resetToken string) (*entity.User, error)
@@ -48,16 +48,33 @@ func (r *userRepository) GetUserByID(id uint64) (*entity.User, error) {
 }
 
 func (r *userRepository) UpdateUser(user *entity.User) error {
-	return r.db.Save(user).Error
+	return r.db.Model(&entity.User{}).
+		Where("id = ?", user.ID).
+		Updates(map[string]interface{}{
+			"full_name":                      user.FullName,
+			"email":                          user.Email,
+			"nickname":                       user.Nickname,
+			"password":                       user.Password,
+			"recover_password_token":         user.RecoverPasswordToken,
+			"recover_password_token_expires": user.RecoverPasswordTokenExpires,
+			"is_active":                      user.IsActive,
+		}).Error
 }
 
 func (r *userRepository) DeleteUser(id uint64) error {
 	return r.db.Delete(&entity.User{}, id).Error
 }
 
-func (r *userRepository) GetUserByEmail(email string) (*entity.User, error) {
+func (r *userRepository) GetUserByEmail(email string, preloadRoles bool) (*entity.User, error) {
 	var user entity.User
-	err := r.db.Preload("Roles").Where("email = ?", email).First(&user).Error
+	query := r.db.Where("email = ?", email)
+
+	// Conditionally preload roles
+	if preloadRoles {
+		query = query.Preload("Roles")
+	}
+
+	err := query.First(&user).Error
 	if err != nil {
 		return nil, err
 	}
