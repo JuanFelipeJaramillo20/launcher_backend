@@ -18,8 +18,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"log"
 	"os"
 	"time"
@@ -32,6 +30,10 @@ import (
 	"venecraft-back/cmd/service"
 	"venecraft-back/cmd/utils"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/gorcon/rcon"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-openapi/runtime/middleware"
@@ -41,6 +43,7 @@ import (
 )
 
 var DB *gorm.DB
+var RCONClient *rcon.Conn
 
 func init() {
 	env := os.Getenv("APP_ENV")
@@ -58,6 +61,21 @@ func init() {
 			log.Println("No .env.production file found. Ensure you have set the environment variables.")
 		}
 	}
+
+	// Initialize RCON service
+	rconSecret := os.Getenv("RCON_PASSWORD")
+	rconHost := os.Getenv("RCON_HOST")
+	rconPort := os.Getenv("RCON_PORT")
+	rconAddress := fmt.Sprintf("%s:%s", rconHost, rconPort)
+
+	// Crear cliente RCON
+	var rconerr error
+	RCONClient, rconerr = utils.NewRCONClient(rconAddress, rconSecret)
+	if rconerr != nil {
+		log.Fatalf("Unable to connect to RCON server, %v", err)
+		return
+	}
+	log.Println("Cliente RCON inicializado con éxito")
 
 	// Initialize AWS S3
 	awsRegion := os.Getenv("AWS_REGION")
@@ -111,6 +129,13 @@ func connectDatabase() {
 
 func main() {
 	connectDatabase()
+	// Verify RCON server
+	defer func() {
+		if RCONClient != nil {
+			RCONClient.Close()
+			log.Println("Cliente RCON cerrado correctamente")
+		}
+	}()
 
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(DB)
@@ -160,6 +185,7 @@ func main() {
 		routes.UserRoutes(protected, userController)
 		routes.NewsRoutes(protected, newsController)
 		routes.ServerStatsRoutes(protected, statsController)
+		routes.RCONRoutes(protected, RCONClient)
 	}
 
 	// Health check route
